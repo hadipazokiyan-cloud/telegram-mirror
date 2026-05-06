@@ -1,20 +1,21 @@
-import json
 import requests
+import json
 import os
-import re
+from bs4 import BeautifulSoup
 from xml.etree import ElementTree
 
 CHANNEL = "FVpnProxy"
 
-OUTPUT = "posts.json"
-
+SCRAPE_URL = f"https://t.me/s/{CHANNEL}"
 RSS_URL = f"https://rsshub.app/telegram/channel/{CHANNEL}"
-WEB_URL = f"https://t.me/s/{CHANNEL}"
+
+OUTPUT = "posts.json"
 
 
 def load_existing():
     if not os.path.exists(OUTPUT):
         return []
+
     with open(OUTPUT, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -24,75 +25,126 @@ def save(posts):
         json.dump(posts, f, ensure_ascii=False, indent=2)
 
 
-def fetch_rss():
+def scrape_posts():
+
+    print("Trying web scrape...")
+
     try:
-        r = requests.get(RSS_URL, timeout=20)
+        r = requests.get(SCRAPE_URL, timeout=30)
+
         if r.status_code != 200:
             return []
 
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        messages = soup.find_all("div", class_="tgme_widget_message")
+
+        posts = []
+
+        for msg in messages:
+
+            msg_id = msg.get("data-post")
+
+            text_block = msg.find("div", class_="tgme_widget_message_text")
+            text = text_block.get_text("\n") if text_block else ""
+
+            date_tag = msg.find("time")
+            date = date_tag.get("datetime") if date_tag else ""
+
+            media = []
+
+            photo = msg.find("a", class_="tgme_widget_message_photo_wrap")
+            if photo and photo.get("style"):
+                style = photo.get("style")
+                start = style.find("url(") + 4
+                end = style.find(")")
+                img = style[start:end]
+
+                media.append({
+                    "type": "photo",
+                    "url": img
+                })
+
+            video = msg.find("video")
+            if video and video.get("src"):
+                media.append({
+                    "type": "video",
+                    "url": video.get("src")
+                })
+
+            posts.append({
+                "id": msg_id,
+                "text": text,
+                "date": date,
+                "media": media
+            })
+
+        return posts
+
+    except Exception as e:
+        print("Scrape failed:", e)
+        return []
+
+
+def rss_posts():
+
+    print("Fallback to RSS...")
+
+    try:
+        r = requests.get(RSS_URL, timeout=30)
+
         root = ElementTree.fromstring(r.content)
+
         posts = []
 
         for item in root.findall(".//item"):
+
             title = item.find("title").text if item.find("title") is not None else ""
             link = item.find("link").text if item.find("link") is not None else ""
             date = item.find("pubDate").text if item.find("pubDate") is not None else ""
 
             posts.append({
+                "id": link,
                 "text": title,
-                "link": link,
-                "date": date
+                "date": date,
+                "media": []
             })
 
         return posts
 
-    except:
-        return []
-
-
-def fetch_web():
-    try:
-        r = requests.get(WEB_URL, timeout=20)
-        html = r.text
-
-        posts = []
-
-        messages = re.findall(
-            r'tgme_widget_message_text.*?>(.*?)</div>',
-            html,
-            re.S
-        )
-
-        for i, m in enumerate(messages):
-            text = re.sub("<.*?>", "", m)
-            posts.append({
-                "text": text.strip(),
-                "link": f"https://t.me/{CHANNEL}",
-                "date": ""
-            })
-
-        return posts
-
-    except:
+    except Exception as e:
+        print("RSS failed:", e)
         return []
 
 
 def main():
-    print("Trying RSS...")
 
-    posts = fetch_rss()
+    existing = load_existing()
+
+    existing_ids = {p["id"] for p in existing}
+
+    posts = scrape_posts()
 
     if not posts:
-        print("RSS failed, trying web...")
-        posts = fetch_web()
+        posts = rss_posts()
 
     if not posts:
-        print("No posts found")
+        print("No posts fetched")
         return
 
-    save(posts)
-    print(f"{len(posts)} posts saved")
+    new_posts = []
+
+    for p in posts:
+        if p["id"] not in existing_ids:
+            new_posts.append(p)
+
+    if new_posts:
+        existing.extend(new_posts)
+        save(existing)
+        print(f"{len(new_posts)} new posts added")
+
+    else:
+        print("No new posts")
 
 
-if __name__ == "__main__":
-    main()
+if __
