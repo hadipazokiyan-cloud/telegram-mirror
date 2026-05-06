@@ -4,20 +4,27 @@ import os
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree
 
-CHANNEL = "FVpnProxy"
+CHANNEL = "durov"
 
 SCRAPE_URL = f"https://t.me/s/{CHANNEL}"
 RSS_URL = f"https://rsshub.app/telegram/channel/{CHANNEL}"
 
 OUTPUT = "posts.json"
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+}
+
 
 def load_existing():
     if not os.path.exists(OUTPUT):
         return []
 
-    with open(OUTPUT, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(OUTPUT, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
 
 
 def save(posts):
@@ -30,9 +37,10 @@ def scrape_posts():
     print("Trying web scrape...")
 
     try:
-        r = requests.get(SCRAPE_URL, timeout=30)
+        r = requests.get(SCRAPE_URL, headers=HEADERS, timeout=30)
 
         if r.status_code != 200:
+            print("Scrape HTTP error:", r.status_code)
             return []
 
         soup = BeautifulSoup(r.text, "html.parser")
@@ -79,6 +87,8 @@ def scrape_posts():
                 "media": media
             })
 
+        print(f"Scraped {len(posts)} posts")
+
         return posts
 
     except Exception as e:
@@ -88,10 +98,10 @@ def scrape_posts():
 
 def rss_posts():
 
-    print("Fallback to RSS...")
+    print("Trying RSS fallback...")
 
     try:
-        r = requests.get(RSS_URL, timeout=30)
+        r = requests.get(RSS_URL, headers=HEADERS, timeout=30)
 
         root = ElementTree.fromstring(r.content)
 
@@ -110,6 +120,8 @@ def rss_posts():
                 "media": []
             })
 
+        print(f"RSS fetched {len(posts)} posts")
+
         return posts
 
     except Exception as e:
@@ -126,10 +138,11 @@ def main():
     posts = scrape_posts()
 
     if not posts:
+        print("Scrape returned nothing, trying RSS")
         posts = rss_posts()
 
     if not posts:
-        print("No posts fetched")
+        print("Nothing fetched, exiting safely")
         return
 
     new_posts = []
@@ -142,9 +155,9 @@ def main():
         existing.extend(new_posts)
         save(existing)
         print(f"{len(new_posts)} new posts added")
-
     else:
         print("No new posts")
 
 
-if __
+if __name__ == "__main__":
+    main()
