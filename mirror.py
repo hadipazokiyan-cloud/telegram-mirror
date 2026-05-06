@@ -3,45 +3,51 @@ import json
 import requests
 from bs4 import BeautifulSoup
 
-MEDIA_IMG = "media/images"
-MEDIA_VID = "media/videos"
-
-os.makedirs(MEDIA_IMG, exist_ok=True)
-os.makedirs(MEDIA_VID, exist_ok=True)
-
 HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
 POST_LIMIT = 50
+MEDIA_DIR = "media"
+
+
+def ensure_dirs():
+    if not os.path.exists(MEDIA_DIR):
+        os.makedirs(MEDIA_DIR)
 
 
 def load_channels():
-    if not os.path.exists("list.txt"):
-        return []
-
-    with open("list.txt", "r", encoding="utf8") as f:
-        return [x.strip().replace("@","") for x in f if x.strip()]
+    channels = []
+    if os.path.exists("list.txt"):
+        with open("list.txt", "r", encoding="utf-8") as f:
+            for line in f:
+                ch = line.strip().replace("@", "")
+                if ch:
+                    channels.append(ch)
+    return channels
 
 
 def load_db():
     if not os.path.exists("posts.json"):
-        return {"channels":{}}
+        return {"channels": {}}
 
-    with open("posts.json","r",encoding="utf8") as f:
-        return json.load(f)
-
-
-def save_db(db):
-    with open("posts.json","w",encoding="utf8") as f:
-        json.dump(db,f,ensure_ascii=False,indent=2)
-
-
-def download(url,path):
     try:
-        r=requests.get(url,headers=HEADERS,timeout=20)
-        if r.status_code==200:
-            with open(path,"wb") as f:
+        with open("posts.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {"channels": {}}
+
+
+def save_db(data):
+    with open("posts.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def download_image(url, path):
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=20)
+        if r.status_code == 200:
+            with open(path, "wb") as f:
                 f.write(r.content)
             return True
     except:
@@ -51,94 +57,96 @@ def download(url,path):
 
 def parse_channel(channel):
 
-    url=f"https://t.me/s/{channel}"
+    url = f"https://t.me/s/{channel}"
 
-    r=requests.get(url,headers=HEADERS)
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=30)
+    except:
+        return []
 
-    soup=BeautifulSoup(r.text,"html.parser")
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    posts=[]
+    posts = []
 
-    for msg in soup.select(".tgme_widget_message")[:POST_LIMIT]:
+    messages = soup.select(".tgme_widget_message")
 
-        msg_id = msg.get("data-post","").split("/")[-1]
+    for msg in messages[:POST_LIMIT]:
+
+        post_id = msg.get("data-post", "")
+        if "/" in post_id:
+            post_id = post_id.split("/")[-1]
 
         text_el = msg.select_one(".tgme_widget_message_text")
-        text = text_el.get_text("\n",strip=True) if text_el else ""
+        text = text_el.get_text("\n", strip=True) if text_el else ""
 
-        date_el = msg.select_one("time")
-        date = date_el["datetime"] if date_el else ""
+        time_el = msg.select_one("time")
+        date = time_el.get("datetime") if time_el else ""
 
-        image=None
-        video=None
+        image_path = None
 
-        img_el = msg.select_one(".tgme_widget_message_photo_wrap")
+        photo = msg.select_one(".tgme_widget_message_photo_wrap")
 
-        if img_el:
-            style = img_el.get("style","")
+        if photo:
+            style = photo.get("style", "")
             if "url(" in style:
-                img_url = style.split("url('")[1].split("')")[0]
-                filename=f"{channel}_{msg_id}.jpg"
-                path=f"{MEDIA_IMG}/{filename}"
+                try:
+                    img_url = style.split("url('")[1].split("')")[0]
 
-                if not os.path.exists(path):
-                    download(img_url,path)
+                    filename = f"{channel}_{post_id}.jpg"
+                    local = os.path.join(MEDIA_DIR, filename)
 
-                image=f"media/images/{filename}"
+                    if not os.path.exists(local):
+                        download_image(img_url, local)
 
-        vid_el = msg.select_one("video source")
+                    image_path = f"media/{filename}"
 
-        if vid_el:
-            vid_url = vid_el.get("src")
-            filename=f"{channel}_{msg_id}.mp4"
-            path=f"{MEDIA_VID}/{filename}"
-
-            if not os.path.exists(path):
-                download(vid_url,path)
-
-            video=f"media/videos/{filename}"
+                except:
+                    pass
 
         posts.append({
-            "id":msg_id,
-            "text":text,
-            "date":date,
-            "image":image,
-            "video":video
+            "id": post_id,
+            "text": text,
+            "date": date,
+            "image": image_path
         })
 
     return posts
 
 
-def merge(old,new):
+def merge_posts(old, new):
 
-    seen={p["id"]:p for p in old}
+    existing = {p["id"]: p for p in old}
 
     for p in new:
-        seen[p["id"]]=p
+        existing[p["id"]] = p
 
-    return list(seen.values())
+    return list(existing.values())
 
 
 def main():
 
-    db=load_db()
+    ensure_dirs()
 
-    channels=load_channels()
+    db = load_db()
+
+    channels = load_channels()
 
     for ch in channels:
 
-        print("scraping:",ch)
+        print("Scraping:", ch)
 
-        new=parse_channel(ch)
+        new_posts = parse_channel(ch)
 
-        old=db["channels"].get(ch,[])
+        old_posts = db["channels"].get(ch, [])
 
-        merged=merge(old,new)
+        merged = merge_posts(old_posts, new_posts)
 
-        db["channels"][ch]=merged
+        db["channels"][ch] = merged
 
     save_db(db)
 
+    print("Done.")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()
