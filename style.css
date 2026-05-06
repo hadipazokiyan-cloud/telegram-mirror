@@ -1,0 +1,44 @@
+body {
+  font-family: Vazirmatn, sans-serif;
+  background: #f4f6f9;
+  margin: 0;
+  padding: 20px;
+}
+
+header {
+  max-width: 900px;
+  margin: auto;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+main {
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+.post {
+  background: white;
+  padding: 18px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.meta {
+  font-size: 0.85rem;
+  color: gray;
+  margin-bottom: 10px;
+}
+
+.post img, video {
+  max-width: 100%;
+  border-radius: 12px;
+  margin-top: 10px;
+}
