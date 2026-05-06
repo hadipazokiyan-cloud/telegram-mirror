@@ -1,152 +1,243 @@
 import os
 import json
-import requests
+import asyncio
+import aiohttp
+import random
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+BASE_URL = "https://t.me/s/"
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-POST_LIMIT = 50
+POST_LIMIT = 10
+MAX_DOWNLOADS = 8
+
 MEDIA_DIR = "media"
+POST_FILE = "posts.json"
+CHANNEL_LIST = "list.txt"
+
+os.makedirs(MEDIA_DIR, exist_ok=True)
+
+download_semaphore = asyncio.Semaphore(MAX_DOWNLOADS)
 
 
-def ensure_dirs():
-    if not os.path.exists(MEDIA_DIR):
-        os.makedirs(MEDIA_DIR)
-
-
-def load_channels():
-    channels = []
-    if os.path.exists("list.txt"):
-        with open("list.txt", "r", encoding="utf-8") as f:
-            for line in f:
-                ch = line.strip().replace("@", "")
-                if ch:
-                    channels.append(ch)
-    return channels
+def log(msg):
+    print(f"[mirror] {msg}", flush=True)
 
 
 def load_db():
-    if not os.path.exists("posts.json"):
+    if not os.path.exists(POST_FILE):
         return {"channels": {}}
 
-    try:
-        with open("posts.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return {"channels": {}}
+    with open(POST_FILE, "r", encoding="utf8") as f:
+        return json.load(f)
 
 
-def save_db(data):
-    with open("posts.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+def save_db(db):
+    with open(POST_FILE, "w", encoding="utf8") as f:
+        json.dump(db, f, ensure_ascii=False, indent=2)
 
 
-def download_image(url, path):
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=20)
-        if r.status_code == 200:
-            with open(path, "wb") as f:
-                f.write(r.content)
-            return True
-    except:
-        pass
-    return False
+def filename_from_url(url, prefix):
+    path = urlparse(url).path
+    name = os.path.basename(path)
+    return f"{prefix}_{name}"
 
 
-def parse_channel(channel):
+async def download(session, url, filename):
 
-    url = f"https://t.me/s/{channel}"
+    path = os.path.join(MEDIA_DIR, filename)
 
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=30)
-    except:
-        return []
+    async with download_semaphore:
 
-    soup = BeautifulSoup(r.text, "html.parser")
+        existing = 0
+        headers = {}
 
-    posts = []
+        if os.path.exists(path):
+            existing = os.path.getsize(path)
+            headers["Range"] = f"bytes={existing}-"
 
-    messages = soup.select(".tgme_widget_message")
+        for attempt in range(3):
 
-    for msg in messages[:POST_LIMIT]:
+            try:
 
-        post_id = msg.get("data-post", "")
-        if "/" in post_id:
-            post_id = post_id.split("/")[-1]
+                async with session.get(url, headers=headers, timeout=300) as r:
 
-        text_el = msg.select_one(".tgme_widget_message_text")
-        text = text_el.get_text("\n", strip=True) if text_el else ""
+                    if r.status not in (200, 206):
+                        raise Exception(f"HTTP {r.status}")
 
-        time_el = msg.select_one("time")
-        date = time_el.get("datetime") if time_el else ""
+                    mode = "ab" if existing else "wb"
 
-        image_path = None
+                    with open(path, mode) as f:
+                        async for chunk in r.content.iter_chunked(65536):
+                            f.write(chunk)
 
-        photo = msg.select_one(".tgme_widget_message_photo_wrap")
+                    log(f"downloaded {filename}")
+                    return path
 
-        if photo:
-            style = photo.get("style", "")
-            if "url(" in style:
-                try:
-                    img_url = style.split("url('")[1].split("')")[0]
+            except Exception as e:
 
-                    filename = f"{channel}_{post_id}.jpg"
-                    local = os.path.join(MEDIA_DIR, filename)
+                log(f"retry {filename} ({attempt+1}) {e}")
+                await asyncio.sleep(2)
 
-                    if not os.path.exists(local):
-                        download_image(img_url, local)
-
-                    image_path = f"media/{filename}"
-
-                except:
-                    pass
-
-        posts.append({
-            "id": post_id,
-            "text": text,
-            "date": date,
-            "image": image_path
-        })
-
-    return posts
+        log(f"failed {filename}")
+        return None
 
 
-def merge_posts(old, new):
+def extract_photo_url(style):
 
-    existing = {p["id"]: p for p in old}
+    if not style:
+        return None
 
-    for p in new:
-        existing[p["id"]] = p
+    start = style.find("url(")
 
-    return list(existing.values())
+    if start == -1:
+        return None
+
+    start += 4
+    end = style.find(")", start)
+
+    return style[start:end]
 
 
-def main():
+async def parse_channel(session, channel):
 
-    ensure_dirs()
+    log(f"fetch {channel}")
+
+    async with session.get(BASE_URL + channel) as r:
+        html = await r.text()
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    posts = soup.select("[data-post]")[:POST_LIMIT]
+
+    results = []
+    tasks = []
+
+    for p in posts:
+
+        try:
+
+            link = p.get("data-post")
+            msg_id = link.split("/")[-1]
+
+            text_tag = p.select_one(".tgme_widget_message_text")
+            text = text_tag.get_text("\n") if text_tag else ""
+
+            time_tag = p.find("time")
+            date = time_tag["datetime"] if time_tag else ""
+
+            media = []
+
+            # photos
+            for i, img in enumerate(p.find_all("a")):
+
+                style = img.get("style")
+                photo_url = extract_photo_url(style)
+
+                if photo_url:
+
+                    filename = f"{channel}_{msg_id}_{i}.jpg"
+
+                    tasks.append(download(session, photo_url, filename))
+
+                    media.append(os.path.join(MEDIA_DIR, filename))
+
+            # videos
+            for video in p.find_all("video"):
+
+                src = video.get("src")
+
+                if src:
+
+                    filename = filename_from_url(src, f"{channel}_{msg_id}")
+
+                    tasks.append(download(session, src, filename))
+
+                    media.append(os.path.join(MEDIA_DIR, filename))
+
+            # documents / files
+            for a in p.find_all("a", href=True):
+
+                href = a["href"]
+
+                if "/file/" in href or "/document/" in href:
+
+                    filename = filename_from_url(href, f"{channel}_{msg_id}")
+
+                    tasks.append(download(session, href, filename))
+
+                    media.append(os.path.join(MEDIA_DIR, filename))
+
+            results.append({
+                "id": msg_id,
+                "text": text,
+                "date": date,
+                "media": media
+            })
+
+        except Exception as e:
+
+            log(f"parse error {channel} {e}")
+
+    await asyncio.gather(*tasks)
+
+    return results
+
+
+def merge(db, channel, posts):
+
+    if channel not in db["channels"]:
+        db["channels"][channel] = []
+
+    existing = {p["id"] for p in db["channels"][channel]}
+
+    added = 0
+
+    for p in posts:
+
+        if p["id"] not in existing:
+            db["channels"][channel].append(p)
+            added += 1
+
+    log(f"{channel} +{added}")
+
+
+async def main():
+
+    log("start")
 
     db = load_db()
 
-    channels = load_channels()
+    if not os.path.exists(CHANNEL_LIST):
+        log("list.txt not found")
+        return
 
-    for ch in channels:
+    with open(CHANNEL_LIST) as f:
+        channels = [x.strip() for x in f if x.strip()]
 
-        print("Scraping:", ch)
+    timeout = aiohttp.ClientTimeout(total=600)
 
-        new_posts = parse_channel(ch)
+    async with aiohttp.ClientSession(headers=HEADERS, timeout=timeout) as session:
 
-        old_posts = db["channels"].get(ch, [])
+        for ch in channels:
 
-        merged = merge_posts(old_posts, new_posts)
+            try:
 
-        db["channels"][ch] = merged
+                posts = await parse_channel(session, ch)
+
+                merge(db, ch, posts)
+
+                await asyncio.sleep(random.uniform(2, 4))
+
+            except Exception as e:
+
+                log(f"channel error {ch} {e}")
 
     save_db(db)
 
-    print("Done.")
+    log("done")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
