@@ -4,7 +4,7 @@ import os
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree
 
-CHANNEL = "durov"
+CHANNEL = "FVpnProxy"
 
 SCRAPE_URL = f"https://t.me/s/{CHANNEL}"
 RSS_URL = f"https://rsshub.app/telegram/channel/{CHANNEL}"
