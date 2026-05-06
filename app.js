@@ -1,68 +1,74 @@
-const POSTS_LIMIT = 15;   // فقط آخرین 15 پست
+const LIMIT = 10;
 
-const container = document.getElementById("posts");
-const searchInput = document.getElementById("search");
+async function loadPosts(){
 
-let allPosts = [];
+const res = await fetch("data/posts.json");
+const data = await res.json();
 
-function getMediaElement(postId) {
-  const id = postId.split("/")[1];
+const posts = data
+.sort((a,b)=>new Date(b.date)-new Date(a.date))
+.slice(0,LIMIT);
 
-  const extensions = ["jpg", "png", "jpeg", "webp", "mp4", "pdf"];
+render(posts);
 
-  for (let ext of extensions) {
-    const path = `media/${id}.${ext}`;
-    const xhr = new XMLHttpRequest();
-    xhr.open("HEAD", path, false);
-    try {
-      xhr.send();
-      if (xhr.status !== 404) {
-        if (ext === "mp4") {
-          return `<video controls src="${path}"></video>`;
-        }
-        if (ext === "pdf") {
-          return `<a href="${path}" target="_blank">دانلود فایل</a>`;
-        }
-        return `<img src="${path}" />`;
-      }
-    } catch (e) {}
-  }
-
-  return "";
 }
 
-function render(posts) {
-  container.innerHTML = posts.map(p => `
-    <article class="post">
-      <div class="meta">
-        ${p.date || "-"} | بازدید: ${p.views || "-"}
-      </div>
-      <div>${p.text || ""}</div>
-      ${getMediaElement(p.id)}
-      <div>
-        <a href="${p.link}" target="_blank">مشاهده در تلگرام</a>
-      </div>
-    </article>
-  `).join("");
+function getMedia(id){
+
+const num = id.split("/")[1];
+
+const images = [
+`media/${num}.jpg`,
+`media/${num}.png`,
+`media/${num}.webp`
+];
+
+const videos = [
+`media/${num}.mp4`
+];
+
+for(let img of images){
+return `<img src="${img}" onerror="this.remove()">`
 }
 
-fetch("data/posts.json")
-  .then(r => r.json())
-  .then(data => {
-    allPosts = data
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, POSTS_LIMIT);
+for(let vid of videos){
+return `<video controls src="${vid}" onerror="this.remove()"></video>`
+}
 
-    render(allPosts);
-  });
+return ""
 
-searchInput.addEventListener("input", () => {
-  const value = searchInput.value.trim();
-  if (!value) return render(allPosts);
+}
 
-  const filtered = allPosts.filter(p =>
-    (p.text || "").includes(value)
-  );
+function render(posts){
 
-  render(filtered);
-});
+const html = posts.map(p=>`
+
+<div class="post">
+
+<div class="meta">
+${p.date} | ${p.views} views
+</div>
+
+<div class="text">
+${p.text || ""}
+</div>
+
+${getMedia(p.id)}
+
+<div style="margin-top:10px">
+<a href="${p.link}" target="_blank">
+مشاهده در تلگرام
+</a>
+</div>
+
+</div>
+
+`).join("")
+
+document.getElementById("posts").innerHTML = html
+
+}
+
+loadPosts()
+
+setInterval(loadPosts,30000)
