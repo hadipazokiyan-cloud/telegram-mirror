@@ -1,218 +1,231 @@
 import os
-import re
 import json
+import re
 import requests
-from pathlib import Path
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0"
 }
 
-POST_LIMIT = 50
-MAX_POSTS_PER_CHANNEL = 200
 MEDIA_DIR = "media"
+POST_LIMIT = 50
+
+os.makedirs(MEDIA_DIR, exist_ok=True)
 
 
 def load_channels():
-    if not os.path.exists("list.txt"):
-        print("list.txt not found")
-        return []
-
     with open("list.txt", "r", encoding="utf-8") as f:
-        channels = []
-        for line in f:
-            ch = line.strip().replace("@", "")
-            if ch:
-                channels.append(ch)
-        return channels
+        return [x.strip() for x in f if x.strip()]
 
 
-def load_old_data():
+def load_db():
     if not os.path.exists("posts.json"):
         return {"channels": {}}
 
-    try:
-        with open("posts.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if not isinstance(data, dict):
-                return {"channels": {}}
-            if "channels" not in data:
-                data["channels"] = {}
-            return data
-    except Exception:
-        return {"channels": {}}
+    with open("posts.json", "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
-def save_data(data):
+def save_db(data):
     with open("posts.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def clean_text(text):
-    if not text:
-        return ""
-    return re.sub(r"\s+", " ", text).strip()
+def get_extension(url):
+    path = urlparse(url).path
+    ext = os.path.splitext(path)[1]
+    if ext:
+        return ext
+    return ".bin"
 
 
-def extract_bg_url(style_value):
-    if not style_value:
-        return None
-    m = re.search(r"url\(['\"]?(.*?)['\"]?\)", style_value)
-    if not m:
-        return None
-    return m.group(1)
+def detect_type(ext):
+    ext = ext.lower()
+
+    if ext in [".jpg",".jpeg",".png",".webp",".gif"]:
+        return "image"
+
+    if ext in [".mp4",".mov",".webm",".mkv"]:
+        return "video"
+
+    if ext in [".mp3",".ogg",".wav",".m4a"]:
+        return "audio"
+
+    return "file"
 
 
-def ensure_media_dir():
-    Path(MEDIA_DIR).mkdir(parents=True, exist_ok=True)
-
-
-def download_image(url, channel, post_id):
-    if not url:
-        return None
-
-    ensure_media_dir()
-
-    ext = ".jpg"
-    lower_url = url.lower()
-    if ".png" in lower_url:
-        ext = ".png"
-    elif ".webp" in lower_url:
-        ext = ".webp"
-    elif ".jpeg" in lower_url:
-        ext = ".jpg"
-
-    filename = f"{channel}_{post_id}{ext}"
-    filepath = os.path.join(MEDIA_DIR, filename)
-
-    # اگر قبلاً دانلود شده، دوباره دانلود نکن
-    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-        return filepath.replace("\\", "/")
-
+def download_file(url, path):
     try:
-        r = requests.get(url, headers=HEADERS, timeout=30)
-        if r.status_code != 200:
-            print(f"image download failed [{channel}/{post_id}] status={r.status_code}")
-            return None
-
-        with open(filepath, "wb") as f:
-            f.write(r.content)
-
-        return filepath.replace("\\", "/")
-    except Exception as e:
-        print(f"image download error [{channel}/{post_id}]: {e}")
-        return None
+        r = requests.get(url, headers=HEADERS, timeout=20)
+        if r.status_code == 200:
+            with open(path, "wb") as f:
+                f.write(r.content)
+            return True
+    except:
+        pass
+    return False
 
 
-def parse_channel(channel):
+def extract_media(post, channel, post_id):
+
+    media = []
+    index = 1
+
+    # عکس
+    imgs = post.select("a.tgme_widget_message_photo_wrap")
+
+    for img in imgs:
+        style = img.get("style","")
+        m = re.search(r"url\('(.+?)'\)", style)
+
+        if not m:
+            continue
+
+        url = m.group(1)
+        ext = get_extension(url)
+
+        filename = f"{channel}_{post_id}_{index}{ext}"
+        path = os.path.join(MEDIA_DIR, filename)
+
+        if not os.path.exists(path):
+            download_file(url, path)
+
+        media.append({
+            "type": "image",
+            "file": f"media/{filename}"
+        })
+
+        index += 1
+
+    # ویدیو
+    videos = post.select("video source")
+
+    for v in videos:
+        url = v.get("src")
+        if not url:
+            continue
+
+        ext = get_extension(url)
+
+        filename = f"{channel}_{post_id}_{index}{ext}"
+        path = os.path.join(MEDIA_DIR, filename)
+
+        if not os.path.exists(path):
+            download_file(url, path)
+
+        media.append({
+            "type": "video",
+            "file": f"media/{filename}"
+        })
+
+        index += 1
+
+    # فایل‌ها
+    files = post.select("a.tgme_widget_message_document")
+
+    for f in files:
+        href = f.get("href")
+        if not href:
+            continue
+
+        url = urljoin("https://t.me", href)
+
+        ext = get_extension(url)
+
+        filename = f"{channel}_{post_id}_{index}{ext}"
+        path = os.path.join(MEDIA_DIR, filename)
+
+        if not os.path.exists(path):
+            download_file(url, path)
+
+        media.append({
+            "type": detect_type(ext),
+            "file": f"media/{filename}"
+        })
+
+        index += 1
+
+    return media
+
+
+def scrape_channel(channel):
+
     url = f"https://t.me/s/{channel}"
-    r = requests.get(url, headers=HEADERS, timeout=30)
 
-    if r.status_code != 200:
-        raise Exception(f"request failed with status {r.status_code}")
-
+    r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text, "html.parser")
-    blocks = soup.select(".tgme_widget_message")[:POST_LIMIT]
 
-    posts = []
+    posts = soup.select(".tgme_widget_message")[:POST_LIMIT]
 
-    for block in blocks:
-        data_post = block.get("data-post")
-        if not data_post or "/" not in data_post:
+    results = []
+
+    for post in posts:
+
+        post_id = post.get("data-post")
+
+        if not post_id:
             continue
 
-        try:
-            pid = int(data_post.split("/")[-1])
-        except Exception:
-            continue
+        post_id = post_id.split("/")[-1]
 
-        text_el = block.select_one(".tgme_widget_message_text")
-        text = clean_text(text_el.get_text(" ", strip=True) if text_el else "")
+        text_el = post.select_one(".tgme_widget_message_text")
 
-        time_el = block.select_one("time")
-        date = time_el.get("datetime", "") if time_el else ""
+        text = ""
+        if text_el:
+            text = text_el.get_text("\n", strip=True)
 
-        image_path = None
-        photo_wrap = block.select_one(".tgme_widget_message_photo_wrap")
-        if photo_wrap:
-            style = photo_wrap.get("style", "")
-            raw_img_url = extract_bg_url(style)
-            if raw_img_url:
-                image_path = download_image(raw_img_url, channel, pid)
+        date_el = post.select_one("time")
 
-        post = {
-            "id": pid,
-            "text": text,
+        date = ""
+        if date_el:
+            date = date_el.get("datetime","")
+
+        media = extract_media(post, channel, post_id)
+
+        results.append({
+            "id": post_id,
             "date": date,
-            "image": image_path
-        }
+            "text": text,
+            "media": media
+        })
 
-        posts.append(post)
-
-    return posts
+    return results
 
 
-def merge_posts(old_posts, new_posts):
-    by_id = {}
+def merge(old, new):
 
-    for p in old_posts:
-        if "id" in p:
-            by_id[p["id"]] = p
+    old_ids = {p["id"] for p in old}
 
-    for p in new_posts:
-        pid = p.get("id")
-        if not pid:
-            continue
+    merged = old.copy()
 
-        if pid in by_id:
-            # اگر پست قبلاً بوده ولی عکس نداشته و الان دارد، بروزرسانی کن
-            old_item = by_id[pid]
+    for p in new:
+        if p["id"] not in old_ids:
+            merged.append(p)
 
-            if not old_item.get("text") and p.get("text"):
-                old_item["text"] = p["text"]
-
-            if not old_item.get("date") and p.get("date"):
-                old_item["date"] = p["date"]
-
-            if not old_item.get("image") and p.get("image"):
-                old_item["image"] = p["image"]
-
-            by_id[pid] = old_item
-        else:
-            by_id[pid] = p
-
-    merged = list(by_id.values())
-    merged.sort(key=lambda x: x.get("id", 0), reverse=True)
-
-    return merged[:MAX_POSTS_PER_CHANNEL]
+    return merged
 
 
 def main():
+
     channels = load_channels()
-    if not channels:
-        print("No channels found in list.txt")
-        return
 
-    data = load_old_data()
+    db = load_db()
 
-    if "channels" not in data:
-        data["channels"] = {}
+    for ch in channels:
 
-    for channel in channels:
-        print(f"Scraping channel: {channel}")
+        print("Scraping:", ch)
 
-        try:
-            new_posts = parse_channel(channel)
-            old_posts = data["channels"].get(channel, [])
-            merged = merge_posts(old_posts, new_posts)
-            data["channels"][channel] = merged
-            print(f"Saved {len(merged)} posts for {channel}")
-        except Exception as e:
-            print(f"Error in channel {channel}: {e}")
-            continue
+        new_posts = scrape_channel(ch)
 
-    save_data(data)
+        if ch not in db["channels"]:
+            db["channels"][ch] = new_posts
+        else:
+            db["channels"][ch] = merge(db["channels"][ch], new_posts)
+
+    save_db(db)
+
     print("Done.")
 
 
