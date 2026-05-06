@@ -1,19 +1,16 @@
-name: Telegram Mirror Update
+name: Telegram Mirror
 
 on:
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -25,7 +22,7 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Run mirror
+      - name: Run scraper
         run: |
           python mirror.py
 
