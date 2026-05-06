@@ -1,179 +1,135 @@
 import requests
+from bs4 import BeautifulSoup
 import json
 import os
-from bs4 import BeautifulSoup
+import re
 from datetime import datetime
-import xml.etree.ElementTree as ET
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
-LIST_FILE = "list.txt"
-OUTPUT_FILE = "posts.json"
-
-
-def clean_url(url):
-    if not url:
-        return ""
-    return str(url).strip().replace('"', '').replace("'", "")
-
-
-def scrape_channel(channel):
-
-    url = f"https://t.me/s/{channel}"
-
-    r = requests.get(url, headers=HEADERS, timeout=30)
-
-    if r.status_code != 200:
-        raise Exception("scrape failed")
-
-    soup = BeautifulSoup(r.text, "html.parser")
-
-    posts = []
-
-    messages = soup.select(".tgme_widget_message")
-
-    for m in messages:
-
-        post_id = m.get("data-post")
-
-        text_el = m.select_one(".tgme_widget_message_text")
-
-        text = text_el.get_text("\n") if text_el else ""
-
-        date_el = m.select_one("time")
-
-        date = date_el["datetime"] if date_el else None
-
-        media = []
-
-        photo = m.select_one(".tgme_widget_message_photo_wrap")
-
-        if photo:
-            style = photo.get("style", "")
-            if "url(" in style:
-                url = style.split("url(")[1].split(")")[0]
-                media.append({
-                    "type": "photo",
-                    "url": clean_url(url)
-                })
-
-        video = m.select_one("video")
-
-        if video and video.get("src"):
-            media.append({
-                "type": "video",
-                "url": clean_url(video.get("src"))
-            })
-
-        posts.append({
-            "id": post_id,
-            "text": text,
-            "date": date,
-            "media": media
-        })
-
-    return posts
-
-
-def rss_fallback(channel):
-
-    url = f"https://rsshub.app/telegram/channel/{channel}"
-
-    r = requests.get(url, headers=HEADERS, timeout=30)
-
-    if r.status_code != 200:
-        return []
-
-    root = ET.fromstring(r.text)
-
-    posts = []
-
-    for item in root.findall(".//item"):
-
-        title = item.findtext("title")
-        link = item.findtext("link")
-        date = item.findtext("pubDate")
-
-        posts.append({
-            "id": link,
-            "text": title,
-            "date": date,
-            "media": []
-        })
-
-    return posts
+POST_LIMIT = 50
 
 
 def load_channels():
-
-    if not os.path.exists(LIST_FILE):
+    if not os.path.exists("list.txt"):
         return []
-
-    with open(LIST_FILE, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    channels = []
-
-    for l in lines:
-        l = l.strip()
-        if l:
-            channels.append(l)
-
-    return channels
+    with open("list.txt", "r", encoding="utf-8") as f:
+        return [x.strip().replace("@","") for x in f if x.strip()]
 
 
-def load_existing():
-
-    if not os.path.exists(OUTPUT_FILE):
+def load_old():
+    if not os.path.exists("posts.json"):
         return {"channels": {}}
 
-    with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open("posts.json","r",encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {"channels": {}}
 
 
-def save(data):
+def clean_text(t):
+    if not t:
+        return ""
+    return re.sub(r"\s+", " ", t).strip()
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def parse_channel(channel):
+    url = f"https://t.me/s/{channel}"
+    r = requests.get(url, headers=HEADERS, timeout=20)
+
+    if r.status_code != 200:
+        raise Exception("request failed")
+
+    soup = BeautifulSoup(r.text,"html.parser")
+
+    posts = []
+
+    blocks = soup.select(".tgme_widget_message")[:POST_LIMIT]
+
+    for b in blocks:
+
+        post_id = b.get("data-post")
+        if not post_id:
+            continue
+
+        try:
+            pid = int(post_id.split("/")[-1])
+        except:
+            continue
+
+        text_el = b.select_one(".tgme_widget_message_text")
+        text = clean_text(text_el.get_text(" ",strip=True) if text_el else "")
+
+        date_el = b.select_one("time")
+        date = date_el.get("datetime") if date_el else ""
+
+        img = None
+        photo = b.select_one(".tgme_widget_message_photo_wrap")
+        if photo:
+            style = photo.get("style","")
+            m = re.search(r"url\('(.*?)'\)",style)
+            if m:
+                img = m.group(1)
+
+        posts.append({
+            "id": pid,
+            "text": text,
+            "date": date,
+            "image": img
+        })
+
+    return posts
+
+
+def merge(old_posts,new_posts):
+
+    ids = {p["id"] for p in old_posts}
+
+    for p in new_posts:
+        if p["id"] not in ids:
+            old_posts.append(p)
+
+    old_posts.sort(key=lambda x:x["id"], reverse=True)
+
+    return old_posts[:200]
 
 
 def main():
 
     channels = load_channels()
 
-    data = load_existing()
+    if not channels:
+        print("no channels")
+        return
+
+    data = load_old()
 
     if "channels" not in data:
         data["channels"] = {}
 
     for ch in channels:
 
-        print("fetching", ch)
+        print("scraping",ch)
 
         try:
-
-            posts = scrape_channel(ch)
-
-            if not posts:
-                raise Exception()
-
-        except:
-
-            print("scrape failed, trying rss", ch)
-
-            posts = rss_fallback(ch)
-
-        if not posts:
-            print("no posts", ch)
+            new_posts = parse_channel(ch)
+        except Exception as e:
+            print("error:",ch,e)
             continue
 
-        data["channels"][ch] = posts
+        old_posts = data["channels"].get(ch,[])
 
-        print("saved", ch, len(posts))
+        merged = merge(old_posts,new_posts)
 
-    save(data)
+        data["channels"][ch] = merged
+
+        print("posts:",len(merged))
+
+    with open("posts.json","w",encoding="utf-8") as f:
+        json.dump(data,f,ensure_ascii=False,indent=2)
 
     print("done")
 
