@@ -5,9 +5,6 @@ on:
     - cron: "*/30 * * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -16,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -26,29 +23,22 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
-
-      - name: Ensure required files
-        run: |
-          test -f list.txt || (echo "list.txt not found" && exit 1)
-          test -f posts.json || echo '{ "channels": {} }' > posts.json
-          mkdir -p media
+          pip install -r requirements.txt
 
       - name: Run mirror
         run: |
           python mirror.py
 
-      - name: Commit and push if changed
+      - name: Commit changes
         run: |
-          git config --global user.name "mirror-bot"
-          git config --global user.email "mirror-bot@users.noreply.github.com"
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
 
           git add posts.json media
 
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "No changes"
           else
-            git commit -m "update posts and media"
+            git commit -m "update posts"
             git push
           fi
