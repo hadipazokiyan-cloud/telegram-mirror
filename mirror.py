@@ -2,161 +2,180 @@ import requests
 import json
 import os
 from bs4 import BeautifulSoup
-from xml.etree import ElementTree
-
-CHANNEL = "ZibaNabz"
-
-SCRAPE_URL = f"https://t.me/s/{CHANNEL}"
-RSS_URL = f"https://rsshub.app/telegram/channel/{CHANNEL}"
-
-OUTPUT = "posts.json"
+from datetime import datetime
+import xml.etree.ElementTree as ET
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    "User-Agent": "Mozilla/5.0"
 }
+
+LIST_FILE = "list.txt"
+OUTPUT_FILE = "posts.json"
+
+
+def clean_url(url):
+    if not url:
+        return ""
+    return str(url).strip().replace('"', '').replace("'", "")
+
+
+def scrape_channel(channel):
+
+    url = f"https://t.me/s/{channel}"
+
+    r = requests.get(url, headers=HEADERS, timeout=30)
+
+    if r.status_code != 200:
+        raise Exception("scrape failed")
+
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    posts = []
+
+    messages = soup.select(".tgme_widget_message")
+
+    for m in messages:
+
+        post_id = m.get("data-post")
+
+        text_el = m.select_one(".tgme_widget_message_text")
+
+        text = text_el.get_text("\n") if text_el else ""
+
+        date_el = m.select_one("time")
+
+        date = date_el["datetime"] if date_el else None
+
+        media = []
+
+        photo = m.select_one(".tgme_widget_message_photo_wrap")
+
+        if photo:
+            style = photo.get("style", "")
+            if "url(" in style:
+                url = style.split("url(")[1].split(")")[0]
+                media.append({
+                    "type": "photo",
+                    "url": clean_url(url)
+                })
+
+        video = m.select_one("video")
+
+        if video and video.get("src"):
+            media.append({
+                "type": "video",
+                "url": clean_url(video.get("src"))
+            })
+
+        posts.append({
+            "id": post_id,
+            "text": text,
+            "date": date,
+            "media": media
+        })
+
+    return posts
+
+
+def rss_fallback(channel):
+
+    url = f"https://rsshub.app/telegram/channel/{channel}"
+
+    r = requests.get(url, headers=HEADERS, timeout=30)
+
+    if r.status_code != 200:
+        return []
+
+    root = ET.fromstring(r.text)
+
+    posts = []
+
+    for item in root.findall(".//item"):
+
+        title = item.findtext("title")
+        link = item.findtext("link")
+        date = item.findtext("pubDate")
+
+        posts.append({
+            "id": link,
+            "text": title,
+            "date": date,
+            "media": []
+        })
+
+    return posts
+
+
+def load_channels():
+
+    if not os.path.exists(LIST_FILE):
+        return []
+
+    with open(LIST_FILE, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    channels = []
+
+    for l in lines:
+        l = l.strip()
+        if l:
+            channels.append(l)
+
+    return channels
 
 
 def load_existing():
-    if not os.path.exists(OUTPUT):
-        return []
 
-    try:
-        with open(OUTPUT, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return []
+    if not os.path.exists(OUTPUT_FILE):
+        return {"channels": {}}
+
+    with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
-def save(posts):
-    with open(OUTPUT, "w", encoding="utf-8") as f:
-        json.dump(posts, f, ensure_ascii=False, indent=2)
+def save(data):
 
-
-def scrape_posts():
-
-    print("Trying web scrape...")
-
-    try:
-        r = requests.get(SCRAPE_URL, headers=HEADERS, timeout=30)
-
-        if r.status_code != 200:
-            print("Scrape HTTP error:", r.status_code)
-            return []
-
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        messages = soup.find_all("div", class_="tgme_widget_message")
-
-        posts = []
-
-        for msg in messages:
-
-            msg_id = msg.get("data-post")
-
-            text_block = msg.find("div", class_="tgme_widget_message_text")
-            text = text_block.get_text("\n") if text_block else ""
-
-            date_tag = msg.find("time")
-            date = date_tag.get("datetime") if date_tag else ""
-
-            media = []
-
-            photo = msg.find("a", class_="tgme_widget_message_photo_wrap")
-            if photo and photo.get("style"):
-                style = photo.get("style")
-                start = style.find("url(") + 4
-                end = style.find(")")
-                img = style[start:end]
-
-                media.append({
-                    "type": "photo",
-                    "url": img
-                })
-
-            video = msg.find("video")
-            if video and video.get("src"):
-                media.append({
-                    "type": "video",
-                    "url": video.get("src")
-                })
-
-            posts.append({
-                "id": msg_id,
-                "text": text,
-                "date": date,
-                "media": media
-            })
-
-        print(f"Scraped {len(posts)} posts")
-
-        return posts
-
-    except Exception as e:
-        print("Scrape failed:", e)
-        return []
-
-
-def rss_posts():
-
-    print("Trying RSS fallback...")
-
-    try:
-        r = requests.get(RSS_URL, headers=HEADERS, timeout=30)
-
-        root = ElementTree.fromstring(r.content)
-
-        posts = []
-
-        for item in root.findall(".//item"):
-
-            title = item.find("title").text if item.find("title") is not None else ""
-            link = item.find("link").text if item.find("link") is not None else ""
-            date = item.find("pubDate").text if item.find("pubDate") is not None else ""
-
-            posts.append({
-                "id": link,
-                "text": title,
-                "date": date,
-                "media": []
-            })
-
-        print(f"RSS fetched {len(posts)} posts")
-
-        return posts
-
-    except Exception as e:
-        print("RSS failed:", e)
-        return []
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def main():
 
-    existing = load_existing()
+    channels = load_channels()
 
-    existing_ids = {p["id"] for p in existing}
+    data = load_existing()
 
-    posts = scrape_posts()
+    if "channels" not in data:
+        data["channels"] = {}
 
-    if not posts:
-        print("Scrape returned nothing, trying RSS")
-        posts = rss_posts()
+    for ch in channels:
 
-    if not posts:
-        print("Nothing fetched, exiting safely")
-        return
+        print("fetching", ch)
 
-    new_posts = []
+        try:
 
-    for p in posts:
-        if p["id"] not in existing_ids:
-            new_posts.append(p)
+            posts = scrape_channel(ch)
 
-    if new_posts:
-        existing.extend(new_posts)
-        save(existing)
-        print(f"{len(new_posts)} new posts added")
-    else:
-        print("No new posts")
+            if not posts:
+                raise Exception()
+
+        except:
+
+            print("scrape failed, trying rss", ch)
+
+            posts = rss_fallback(ch)
+
+        if not posts:
+            print("no posts", ch)
+            continue
+
+        data["channels"][ch] = posts
+
+        print("saved", ch, len(posts))
+
+    save(data)
+
+    print("done")
 
 
 if __name__ == "__main__":
