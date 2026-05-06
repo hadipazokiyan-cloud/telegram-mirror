@@ -1,18 +1,20 @@
 import json
 import requests
 import os
+import re
 from xml.etree import ElementTree
 
-CHANNEL = os.getenv("TG_CHANNEL")
-RSS_URL = f"https://rsshub.app/telegram/channel/{CHANNEL}"
+CHANNEL = "FVpnProxy"
 
 OUTPUT = "posts.json"
+
+RSS_URL = f"https://rsshub.app/telegram/channel/{CHANNEL}"
+WEB_URL = f"https://t.me/s/{CHANNEL}"
 
 
 def load_existing():
     if not os.path.exists(OUTPUT):
         return []
-
     with open(OUTPUT, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -22,32 +24,74 @@ def save(posts):
         json.dump(posts, f, ensure_ascii=False, indent=2)
 
 
-def fetch_posts():
-    r = requests.get(RSS_URL, timeout=30)
-    root = ElementTree.fromstring(r.content)
+def fetch_rss():
+    try:
+        r = requests.get(RSS_URL, timeout=20)
+        if r.status_code != 200:
+            return []
 
-    posts = []
+        root = ElementTree.fromstring(r.content)
+        posts = []
 
-    for item in root.findall(".//item"):
-        title = item.find("title").text if item.find("title") is not None else ""
-        link = item.find("link").text if item.find("link") is not None else ""
-        date = item.find("pubDate").text if item.find("pubDate") is not None else ""
+        for item in root.findall(".//item"):
+            title = item.find("title").text if item.find("title") is not None else ""
+            link = item.find("link").text if item.find("link") is not None else ""
+            date = item.find("pubDate").text if item.find("pubDate") is not None else ""
 
-        posts.append({
-            "text": title,
-            "link": link,
-            "date": date
-        })
+            posts.append({
+                "text": title,
+                "link": link,
+                "date": date
+            })
 
-    return posts
+        return posts
+
+    except:
+        return []
+
+
+def fetch_web():
+    try:
+        r = requests.get(WEB_URL, timeout=20)
+        html = r.text
+
+        posts = []
+
+        messages = re.findall(
+            r'tgme_widget_message_text.*?>(.*?)</div>',
+            html,
+            re.S
+        )
+
+        for i, m in enumerate(messages):
+            text = re.sub("<.*?>", "", m)
+            posts.append({
+                "text": text.strip(),
+                "link": f"https://t.me/{CHANNEL}",
+                "date": ""
+            })
+
+        return posts
+
+    except:
+        return []
 
 
 def main():
-    existing = load_existing()
-    new_posts = fetch_posts()
+    print("Trying RSS...")
 
-    if new_posts:
-        save(new_posts)
+    posts = fetch_rss()
+
+    if not posts:
+        print("RSS failed, trying web...")
+        posts = fetch_web()
+
+    if not posts:
+        print("No posts found")
+        return
+
+    save(posts)
+    print(f"{len(posts)} posts saved")
 
 
 if __name__ == "__main__":
