@@ -86,4 +86,6 @@ jobs:
 
       # -------------------------------------------------------------
       - name: Done
-        run: echo "✔️ DEBUG WORKFLOW
+        run: |
+          echo "✔️ DEBUG WORKFLOW FINISHED"
+
