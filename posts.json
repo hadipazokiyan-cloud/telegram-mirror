@@ -1,0 +1,15 @@
+{
+  "mychannel": [
+    {
+      "id": 101,
+      "text": "Hello World",
+      "date": "2026-05-07 13:51:34.245369",
+      "media": [
+        {
+          "url": "https://picsum.photos/300/200",
+          "file": "mychannel_101_0_ad89e5780aea.jpg"
+        }
+      ]
+    }
+  ]
+}
