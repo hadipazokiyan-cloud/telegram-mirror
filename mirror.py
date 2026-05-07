@@ -1,243 +1,255 @@
+# mirror.py
+# نسخه نهایی و پایدار
+# Async – Multi‑channel – Auto‑resume – Clean merge – Ultra compatible
+
+import aiohttp
+import asyncio
 import os
 import json
-import asyncio
-import aiohttp
-import random
+import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
 
-BASE_URL = "https://t.me/s/"
-HEADERS = {"User-Agent": "Mozilla/5.0"}
-
-POST_LIMIT = 10
-MAX_DOWNLOADS = 8
-
+DB_FILE = "posts.json"
+LIST_FILE = "list.txt"
 MEDIA_DIR = "media"
-POST_FILE = "posts.json"
-CHANNEL_LIST = "list.txt"
 
-os.makedirs(MEDIA_DIR, exist_ok=True)
+MAX_POSTS_PER_CHANNEL = 10
+MAX_CONCURRENT = 8  # تعداد دانلودهای موازی
+sem = asyncio.Semaphore(MAX_CONCURRENT)
 
-download_semaphore = asyncio.Semaphore(MAX_DOWNLOADS)
+TELEGRAM_BASE = "https://t.me/"
 
-
-def log(msg):
-    print(f"[mirror] {msg}", flush=True)
-
+# -----------------------------------------------------
+# Load + Save Database
+# -----------------------------------------------------
 
 def load_db():
-    if not os.path.exists(POST_FILE):
+    if not os.path.exists(DB_FILE):
         return {"channels": {}}
-
-    with open(POST_FILE, "r", encoding="utf8") as f:
+    with open(DB_FILE, "r", encoding="utf8") as f:
         return json.load(f)
 
-
 def save_db(db):
-    with open(POST_FILE, "w", encoding="utf8") as f:
+    with open(DB_FILE, "w", encoding="utf8") as f:
         json.dump(db, f, ensure_ascii=False, indent=2)
 
+# -----------------------------------------------------
+# Utilities
+# -----------------------------------------------------
 
-def filename_from_url(url, prefix):
-    path = urlparse(url).path
-    name = os.path.basename(path)
-    return f"{prefix}_{name}"
+def safe_filename(channel, post_id, index, ext):
+    return f"{channel}_{post_id}_{index}{ext}"
 
+async def fetch_html(session, url):
+    try:
+        async with session.get(url, timeout=12) as r:
+            if r.status == 200:
+                return await r.text()
+    except:
+        return None
+    return None
 
-async def download(session, url, filename):
+# -----------------------------------------------------
+# Extract media URLs from Telegram HTML
+# -----------------------------------------------------
 
-    path = os.path.join(MEDIA_DIR, filename)
+def extract_media_urls(html):
+    soup = BeautifulSoup(html, "html.parser")
 
-    async with download_semaphore:
+    links = []
 
-        existing = 0
-        headers = {}
+    # عکس‌ها
+    for img in soup.select("a[href*='.jpg'], a[href*='.png'], a[href*='.webp']"):
+        links.append(img.get("href"))
 
+    # ویدیوها
+    for vid in soup.select("a[href*='.mp4']"):
+        links.append(vid.get("href"))
+
+    # انواع فایل مثل zip, apk, pdf, rar
+    for filetag in soup.select("a[href*='.zip'], a[href*='.apk'], a[href*='.pdf'], a[href*='.rar'], a[href*='.doc'], a[href*='.docx'], a[href*='.txt']"):
+        links.append(filetag.get("href"))
+
+    return list(dict.fromkeys(links))
+
+# -----------------------------------------------------
+# Download media with resume
+# -----------------------------------------------------
+
+async def download_file(session, url, path):
+
+    async with sem:
+
+        tmp_path = path + ".part"
+
+        # اگر قبلاً کامل دانلود شده، رد شو
         if os.path.exists(path):
-            existing = os.path.getsize(path)
-            headers["Range"] = f"bytes={existing}-"
+            return True
 
-        for attempt in range(3):
+        # اگر فایل نیمه‌کاره وجود دارد
+        headers = {}
+        resume_pos = 0
 
-            try:
+        if os.path.exists(tmp_path):
+            resume_pos = os.path.getsize(tmp_path)
+            headers["Range"] = f"bytes={resume_pos}-"
 
-                async with session.get(url, headers=headers, timeout=300) as r:
+        try:
+            async with session.get(url, headers=headers) as r:
+                if r.status in (200, 206):
 
-                    if r.status not in (200, 206):
-                        raise Exception(f"HTTP {r.status}")
+                    # ایجاد پوشه
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
 
-                    mode = "ab" if existing else "wb"
+                    mode = "ab" if resume_pos > 0 else "wb"
 
-                    with open(path, mode) as f:
-                        async for chunk in r.content.iter_chunked(65536):
+                    with open(tmp_path, mode) as f:
+                        async for chunk in r.content.iter_chunked(2048):
                             f.write(chunk)
 
-                    log(f"downloaded {filename}")
-                    return path
+                    os.rename(tmp_path, path)
+                    print(f"[mirror] downloaded {path}")
+                    return True
 
-            except Exception as e:
+        except Exception as e:
+            print(f"[mirror] download error {url}: {e}")
 
-                log(f"retry {filename} ({attempt+1}) {e}")
-                await asyncio.sleep(2)
+        return False
 
-        log(f"failed {filename}")
+# -----------------------------------------------------
+# Scrape a single post
+# -----------------------------------------------------
+
+async def scrape_post(session, channel, post_id):
+    url = f"{TELEGRAM_BASE}{channel}/{post_id}"
+    html = await fetch_html(session, url)
+
+    if not html:
         return None
 
-
-def extract_photo_url(style):
-
-    if not style:
-        return None
-
-    start = style.find("url(")
-
-    if start == -1:
-        return None
-
-    start += 4
-    end = style.find(")", start)
-
-    return style[start:end]
-
-
-async def parse_channel(session, channel):
-
-    log(f"fetch {channel}")
-
-    async with session.get(BASE_URL + channel) as r:
-        html = await r.text()
+    media_urls = extract_media_urls(html)
 
     soup = BeautifulSoup(html, "html.parser")
 
-    posts = soup.select("[data-post]")[:POST_LIMIT]
+    # متن پست
+    text_tag = soup.select_one(".tgme_widget_message_text")
+    text = text_tag.get_text("\n") if text_tag else ""
 
-    results = []
-    tasks = []
+    # تاریخ
+    date_tag = soup.select_one("time")
+    date = date_tag.get("datetime") if date_tag else ""
 
-    for p in posts:
+    # ساختن لیست رسانه
+    media_paths = []
+    index = 0
 
-        try:
+    for m in media_urls:
+        ext = os.path.splitext(m)[1].lower().split("?")[0]
+        if not ext:
+            ext = ".bin"
 
-            link = p.get("data-post")
-            msg_id = link.split("/")[-1]
+        filename = safe_filename(channel, post_id, index, ext)
+        filepath = f"{MEDIA_DIR}/{filename}"
+        media_paths.append(filepath)
+        index += 1
 
-            text_tag = p.select_one(".tgme_widget_message_text")
-            text = text_tag.get_text("\n") if text_tag else ""
+    return {
+        "id": str(post_id),
+        "text": text,
+        "date": date,
+        "media": media_paths
+    }, media_urls
 
-            time_tag = p.find("time")
-            date = time_tag["datetime"] if time_tag else ""
+# -----------------------------------------------------
+# Merge database safely
+# -----------------------------------------------------
 
-            media = []
-
-            # photos
-            for i, img in enumerate(p.find_all("a")):
-
-                style = img.get("style")
-                photo_url = extract_photo_url(style)
-
-                if photo_url:
-
-                    filename = f"{channel}_{msg_id}_{i}.jpg"
-
-                    tasks.append(download(session, photo_url, filename))
-
-                    media.append(os.path.join(MEDIA_DIR, filename))
-
-            # videos
-            for video in p.find_all("video"):
-
-                src = video.get("src")
-
-                if src:
-
-                    filename = filename_from_url(src, f"{channel}_{msg_id}")
-
-                    tasks.append(download(session, src, filename))
-
-                    media.append(os.path.join(MEDIA_DIR, filename))
-
-            # documents / files
-            for a in p.find_all("a", href=True):
-
-                href = a["href"]
-
-                if "/file/" in href or "/document/" in href:
-
-                    filename = filename_from_url(href, f"{channel}_{msg_id}")
-
-                    tasks.append(download(session, href, filename))
-
-                    media.append(os.path.join(MEDIA_DIR, filename))
-
-            results.append({
-                "id": msg_id,
-                "text": text,
-                "date": date,
-                "media": media
-            })
-
-        except Exception as e:
-
-            log(f"parse error {channel} {e}")
-
-    await asyncio.gather(*tasks)
-
-    return results
-
-
-def merge(db, channel, posts):
-
+def merge_posts(db, channel, new_posts):
     if channel not in db["channels"]:
         db["channels"][channel] = []
 
-    existing = {p["id"] for p in db["channels"][channel]}
+    existing_ids = {p["id"] for p in db["channels"][channel]}
 
-    added = 0
-
-    for p in posts:
-
-        if p["id"] not in existing:
+    for p in new_posts:
+        if p["id"] not in existing_ids:
             db["channels"][channel].append(p)
-            added += 1
 
-    log(f"{channel} +{added}")
+    # مرتب‌سازی نزولی
+    db["channels"][channel].sort(key=lambda x: int(x["id"]), reverse=True)
 
+    # محدود کردن دیتابیس
+    db["channels"][channel] = db["channels"][channel][:500]
+
+# -----------------------------------------------------
+# Scrape Channel
+# -----------------------------------------------------
+
+async def scrape_channel(session, channel, db):
+
+    print(f"[mirror] scraping channel {channel} ...")
+
+    # آخرین 10 پست
+    post_ids = list(range(1, MAX_POSTS_PER_CHANNEL + 1))
+
+    # ابتدا شماره پست‌ها را با regex پیدا می‌کنیم
+    main = await fetch_html(session, f"{TELEGRAM_BASE}{channel}")
+
+    if main:
+        ids = re.findall(rf"{channel}/(\d+)", main)
+        if ids:
+            ids = sorted({int(x) for x in ids}, reverse=True)
+            post_ids = ids[:MAX_POSTS_PER_CHANNEL]
+
+    new_posts = []
+    media_tasks = []
+
+    for pid in post_ids:
+        result = await scrape_post(session, channel, pid)
+        if not result:
+            continue
+
+        post, media_urls = result
+        new_posts.append(post)
+
+        # ایجاد تسک دانلود
+        for idx, url in enumerate(media_urls):
+            path = post["media"][idx]
+            media_tasks.append(download_file(session, url, path))
+
+    # دانلود تمام مدیاها
+    await asyncio.gather(*media_tasks)
+
+    # ادغام با دیتابیس
+    merge_posts(db, channel, new_posts)
+
+    print(f"[mirror] done {channel}: {len(new_posts)} posts")
+
+# -----------------------------------------------------
+# MAIN
+# -----------------------------------------------------
 
 async def main():
 
-    log("start")
+    if not os.path.exists(LIST_FILE):
+        print("[mirror] list.txt not found")
+        return
+
+    with open(LIST_FILE, "r", encoding="utf8") as f:
+        channels = [x.strip().replace("@", "") for x in f if x.strip()]
+
+    if not channels:
+        print("[mirror] list is empty")
+        return
 
     db = load_db()
 
-    if not os.path.exists(CHANNEL_LIST):
-        log("list.txt not found")
-        return
-
-    with open(CHANNEL_LIST) as f:
-        channels = [x.strip() for x in f if x.strip()]
-
-    timeout = aiohttp.ClientTimeout(total=600)
-
-    async with aiohttp.ClientSession(headers=HEADERS, timeout=timeout) as session:
-
+    async with aiohttp.ClientSession() as session:
         for ch in channels:
-
-            try:
-
-                posts = await parse_channel(session, ch)
-
-                merge(db, ch, posts)
-
-                await asyncio.sleep(random.uniform(2, 4))
-
-            except Exception as e:
-
-                log(f"channel error {ch} {e}")
+            await scrape_channel(session, ch, db)
 
     save_db(db)
 
-    log("done")
-
+    print("[mirror] all done")
 
 if __name__ == "__main__":
     asyncio.run(main())
