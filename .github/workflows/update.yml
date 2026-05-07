@@ -2,9 +2,8 @@ name: Update Telegram Mirror
 
 on:
   workflow_dispatch:
-
   schedule:
-    - cron: "0 */6 * * *"   # هر 6 ساعت
+    - cron: "*/30 * * * *"   # هر 30 دقیقه
 
 permissions:
   contents: write
@@ -17,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -37,7 +35,7 @@ jobs:
         run: |
           python mirror.py
 
-      - name: Commit changes
+      - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions@github.com"
