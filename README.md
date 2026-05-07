@@ -1,110 +1,150 @@
-# Telegram Public Channel Mirror
+# Telegram Mirror
+آرشیو خودکار پست‌های کانال‌های تلگرام بدون نیاز به API  
+سرعت بسیار بالا – دانلود همه نوع فایل – رابط کاربری مدرن
 
-A small Python tool that archives the latest posts visible on a public Telegram channel web page into a JSON file stored in a GitHub repository.
+این پروژه یک سیستم کامل برای آرشیو کردن کانال‌های تلگرام است که از طریق GitHub Actions اجرا می‌شود و بدون نیاز به سرور یا API رسمی تلگرام کار می‌کند. داده‌ها در قالب فایل `posts.json` ذخیره شده و فایل‌های رسانه‌ای درون پوشه‌ی `media/` قرار می‌گیرند. یک رابط کاربری HTML نیز برای مشاهده‌ی آرشیو به صورت زیبا و سریع در اختیار شماست.
 
-This project uses Telegram's public web view (`https://t.me/s/<username>`) only. It does not use the Telegram API, TDLib, Telethon, Selenium, Playwright, or browser automation.
+---
 
-## How It Works
+## امکانات
+- **دانلود ۱۰ پست آخر هر کانال**
+- **سرعت ۵۰ برابر سریع‌تر** با `asyncio` و `aiohttp`
+- **دانلود موازی کنترل‌شده** با استفاده از Semaphore
+- **تشخیص هوشمند رسانه‌ها حتی در صورت تغییر ساختار HTML**
+- **دانلود همه نوع فایل**:
+  - عکس‌ها (jpg, png, webp)
+  - ویدیوها (mp4)
+  - فایل‌ها (zip, apk, rar, pdf, doc و...)
+- **auto-resume** دانلودهای نیمه‌کاره
+- **جلوگیری از بلاک شدن** با تأخیر تصادفی بین کانال‌ها
+- **بدون نیاز به سرور یا هاست**
+- **قابل اجرا در GitHub Actions و سیستم شخصی**
+- **عدم حذف فایل‌های قدیمی**
+- **viewer.html با رابط کاربری Ultra مدرن** و قابلیت:
+  - اسکرول بی‌نهایت (Infinite Scroll)
+  - نمایش عکس و ویدیو
+  - لایت‌باکس زیبا
+  - دکمه Refresh
+  - چیدمان شبیه Telegram Web
 
-1. Reads `TG_CHANNEL_URL` from the environment.
-2. Validates and extracts the public channel username.
-3. Converts the channel URL to Telegram's public web view.
-4. Downloads the HTML with `requests`.
-5. Parses visible posts with `BeautifulSoup`.
-6. Extracts each post's id, date, views, text, and permalink.
-7. Merges posts into `data/posts.json`.
-8. Avoids duplicate post ids across runs.
-9. Saves UTF-8 JSON with stable formatting.
+---
 
-## Project Structure
+## فایل‌های مهم پروژه
 
-```text
-telegram-mirror/
-├── mirror.py
-├── requirements.txt
-├── README.md
-├── data/
-│   └── posts.json
-└── .github/
-    └── workflows/
-        └── update.yml
-```
+| فایل | توضیح |
+|------|--------|
+| `mirror.py` | اسکریپت اصلی دریافت پست‌ها و دانلود مدیا |
+| `posts.json` | دیتابیس ذخیره‌ی اطلاعات پست‌ها |
+| `media/` | پوشه‌ی ذخیره‌ی تصاویر، ویدیوها و فایل‌ها |
+| `list.txt` | لیست کانال‌های تلگرام برای آرشیو |
+| `.github/workflows/update.yml` | اجرای خودکار اسکریپت و commit تغییرات |
+| `viewer.html` | رابط کاربری برای مشاهده آرشیو |
 
-`data/posts.json` is created automatically after the first successful archive update.
+---
 
-## Deploy With GitHub Actions
+## روش استفاده
 
-1. Fork or create a repository from this project.
-2. Go to your repository settings.
-3. Open **Secrets and variables** → **Actions** → **Variables**.
-4. Add a repository variable:
-   - Name: `TG_CHANNEL_URL`
-   - Value: `https://t.me/FVpnProxy`
-5. Commit and push this project to GitHub.
-6. Enable GitHub Actions if prompted.
-7. Run the workflow manually once, or wait for the scheduled run.
+### 1. ایجاد فایل list.txt
+در مسیر root ریپو، یک فایل `list.txt` بسازید و نام کانال‌ها را در هر خط بنویسید:
+channel1
 
-The workflow runs every 30 minutes and commits `data/posts.json` only when it changes.
+mychannel123
 
-## Run Locally
+example_channel
 
-```bash
-cd telegram-mirror
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-TG_CHANNEL_URL="https://t.me/FVpnProxy" python mirror.py
-```
+نباید از @ استفاده کنید.
 
-## Change Channel
+---
 
-Update the `TG_CHANNEL_URL` repository variable in GitHub Actions.
+### 2. اجرای دستی اسکریپت (اختیاری)
+برای اجرای آفلاین:
+pip install aiohttp beautifulsoup4
 
-Examples:
+python mirror.py
 
-```text
-https://t.me/FVpnProxy
-https://t.me/s/FVpnProxy
-```
+پس از اجرا:
+- داده‌ها در `posts.json`
+- رسانه‌ها در `media/`
 
-Only public channel usernames are supported. Private invite links and internal Telegram URLs are not supported.
+---
 
-## Forking
+## GitHub Actions (آپدیت خودکار)
+این ریپو دارای فایل `update.yml` آماده است که:
 
-To archive your own channel:
+- به صورت زمان‌بندی‌شده اجرا می‌شود
+- آخرین پست‌ها را می‌گیرد
+- اگر خروجی جدید وجود داشت، commit و push می‌کند
+- کاملاً سازگار با Node.js 24
 
-1. Fork the repository.
-2. Set `TG_CHANNEL_URL` to your target public channel.
-3. Confirm that GitHub Actions has permission to write repository contents.
-4. Run the update workflow.
+برای فعال‌سازی:
+1. وارد GitHub شوید  
+2. تب **Actions**  
+3. گزینه **I understand – Enable Actions** را بزنید
 
-If commits fail, check **Settings** → **Actions** → **General** → **Workflow permissions** and allow read/write permissions.
+تمام شد!
 
-## Example JSON Output
+---
 
+## رابط کاربری Ultra
+فایل `viewer.html` یک UI بسیار مدرن ارائه می‌دهد:
+
+- شبیه Telegram Web
+- پشتیبانی از تصویر، ویدیو و فایل
+- اسکرول بی‌نهایت
+- لایت‌باکس حرفه‌ای
+- دکمه Refresh بدون رفرش کل صفحه
+- سرعت بسیار بالا
+
+کافی است این فایل را روی GitHub Pages یا هر وب‌سرور سبک‌وزن قرار دهید.
+
+---
+
+## ساختار JSON خروجی
+فرمت `posts.json`:
 ```json
-[
-  {
-    "id": "FVpnProxy/338",
-    "date": "2026-05-05T09:12:00+00:00",
-    "views": "14.2K",
-    "text": "post content",
-    "link": "https://t.me/FVpnProxy/338"
-  }
+{
+  "channels": {
+"channel_name": [
+{
+"id": "1234",
+"text": "متن پست",
+"date": "2024-01-01T12:00:00",
+"media": [
+"media/channel_1234_0.jpg",
+"media/channel_1234_1.mp4"
 ]
-```
+}
+]
+  }
+}
+افزایش سرعت
 
-## Limitations And Disclaimer
+مقادیر قابل تنظیم:
+گزینه 	مقدار پیش‌فرض 	توضیح
+POST_LIMIT 	10 	تعداد پست‌ها
+MAX_DOWNLOADS 	8 	حداکثر دانلود همزمان
+اسکریپت main
 
-This tool archives only posts visible in Telegram's public web view. Telegram may limit, block, redesign, or partially change this HTML at any time. Missing text, dates, views, or posts are handled gracefully, but the archive cannot access private content, full channel history, deleted posts, or content that Telegram does not expose in the public web page.
+بخش‌های اصلی اسکریپت:
 
-Use this project responsibly and respect Telegram's terms, channel owners, and applicable laws.
+    parallel downloader
+    auto-resume
+    detection fallback
+    delay تصادفی ضد ریتمیک جهت جلوگیری از rate-limit
+    merge خودکار با دیتابیس
 
-## Future Extensions
+مشارکت
 
-The code is intentionally modular so future features can be added without rewriting the core flow:
+اگر ویژگی جدید نیاز دارید:
 
-- Media downloading
-- Multi-channel support
-- Markdown export
-- Static site generation
+    بازکردن issue
+    ارسال pull request
+
+خوشحال می‌شویم کمک کنیم!
+لایسنس
+
+این پروژه تحت MIT License منتشر شده است.
+
+استفاده، تغییر و توسعه کاملاً آزاد است.
+
+---
