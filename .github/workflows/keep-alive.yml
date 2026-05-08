@@ -1,0 +1,27 @@
+name: Keep Repository Alive
+
+on:
+  schedule:
+    - cron: '0 */1 * * *'  # هر 1 ساعت یکبار
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Update timestamp
+      run: |
+        echo "Last keep-alive: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > .last-update
+        echo "Status: ✅ Active" >> .last-update
+    
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "Keep Alive Bot"
+        git add .last-update
+        git diff --quiet && git diff --staged --quiet || git commit -m "⏰ Keep-alive: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git push || echo "No changes to push"
