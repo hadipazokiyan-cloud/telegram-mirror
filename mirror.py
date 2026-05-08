@@ -229,44 +229,171 @@ async def fetch_channel_posts(session: aiohttp.ClientSession, channel: str):
 
     parsed_posts = []
 
-   for post in raw_posts:
+    for post in raw_posts:
+        try:
+            pid = post.get("data-post", "")
+            if "/" in pid:
+                pid = pid.split("/")[-1]
+            pid = pid.strip()
+
+            # متن پست
+            text_el = post.select_one(".tgme_widget_message_text")
+            text = text_el.get_text("\n").strip() if text_el else ""
+
+            # تاریخ/زمان
+            date_el = post.select_one("time")
+            date = date_el.get("datetime", "") if date_el else ""
+
+            # رسانه
+            img_urls, vid_urls = extract_media_from_post(post)
+
+            # نگاشت URLها به مسیرهای محلی
+            local_images = []
+            for idx, img_url in enumerate(img_urls):
+                fname = local_media_name(channel, pid, idx, img_url, "img")
+                local_images.append(str(MEDIA_DIR / fname))
+
+            local_videos = []
+            for idx, vid_url in enumerate(vid_urls):
+                fname = local_media_name(channel, pid, idx, vid_url, "vid")
+                local_videos.append(str(MEDIA_DIR / fname))
+
+            parsed_posts.append({
+                "id": pid,
+                "text": text,
+                "date": date,
+                "images": local_images,
+                "videos": local_videos,
+                "remote_images": img_urls,
+                "remote_videos": vid_urls,
+            })
+
+        except Exception as e:
+            print(f"⚠ Error parsing a post in {channel}: {e}")
+
+    return parsed_posts
+
+
+# -----------------------------
+# دانلود تمام رسانه‌های یک کانال
+# -----------------------------
+async def download_media_for_channel(channel: str, posts):
+    """
+    برای لیست پست‌های یک کانال، تمام رسانه‌ها را دانلود می‌کند.
+    """
+    if not posts:
+        return
+
+    tasks = []
+
+    for post in posts:
+        # تصاویر
+        for idx, (remote, local) in enumerate(zip(post.get("remote_images", []), post.get("images", []))):
+            local_path = Path(local)
+            if not local_path.exists():
+                tasks.append(download_file(remote, local_path))
+
+        # ویدیوها
+        for idx, (remote, local) in enumerate(zip(post.get("remote_videos", []), post.get("videos", []))):
+            local_path = Path(local)
+            if not local_path.exists():
+                tasks.append(download_file(remote, local_path))
+
+    if tasks:
+        print(f"📥 Downloading {len(tasks)} media files for @{channel} ...")
+        await asyncio.gather(*tasks)
+
+
+# -----------------------------
+# ادغام پست‌های جدید با JSON موجود
+# -----------------------------
+def merge_posts(existing_posts, new_posts, channel: str):
+    """
+    ادغام پست‌های جدید با پست‌های موجود
+    - حذف تکراری‌ها بر اساس id
+    - نگهداری آخرین POST_LIMIT پست
+    """
+    # تبدیل به دیکشنری برای حذف تکراری‌ها
+    posts_dict = {}
+    for post in existing_posts:
+        posts_dict[post["id"]] = post
+
+    for post in new_posts:
+        posts_dict[post["id"]] = post
+
+    # تبدیل به لیست و مرتب‌سازی بر اساس id (عدد)
+    posts_list = list(posts_dict.values())
     try:
-        pid = post.get("data-post", "")
-        if "/" in pid:
-            pid = pid.split("/")[-1]
-        pid = pid.strip()
+        posts_list.sort(key=lambda x: int(x["id"]), reverse=True)
+    except ValueError:
+        # اگر id عدد نبود، بر اساس string مرتب کن
+        posts_list.sort(key=lambda x: x["id"], reverse=True)
 
-        # متن پست
-        text_el = post.select_one(".tgme_widget_message_text")
-        text = text_el.get_text("\n").strip() if text_el else ""
+    # فقط آخرین POST_LIMIT پست را نگه دار
+    return posts_list[:POST_LIMIT]
 
-        # تاریخ/زمان
-        date_el = post.select_one("time")
-        date = date_el.get("datetime", "") if date_el else ""
 
-        # رسانه
-        img_urls, vid_urls = extract_media_from_post(post)
+# -----------------------------
+# تابع اصلی (اجرای کل فرآیند)
+# -----------------------------
+async def main():
+    """
+    1. خواندن list.txt
+    2. دریافت پست‌های کانال‌ها
+    3. دانلود رسانه‌ها
+    4. ادغام با posts.json
+    """
+    # خواندن لیست کانال‌ها
+    try:
+        with open("list.txt", "r", encoding="utf-8") as f:
+            channels = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print("❌ list.txt not found!")
+        return
 
-        # نگاشت URLها به مسیرهای محلی
-        local_images = []
-        for idx, img_url in enumerate(img_urls):
-            fname = local_media_name(channel, pid, idx, img_url, "img")
-            local_images.append(str(MEDIA_DIR / fname))
+    if not channels:
+        print("❌ No channels in list.txt")
+        return
 
-        local_videos = []
-        for idx, vid_url in enumerate(vid_urls):
-            fname = local_media_name(channel, pid, idx, vid_url, "vid")
-            local_videos.append(str(MEDIA_DIR / fname))
+    print(f"📡 Processing {len(channels)} channels: {channels}")
 
-        parsed_posts.append({
-            "id": pid,
-            "text": text,
-            "date": date,
-            "images": local_images,
-            "videos": local_videos,
-            "remote_images": img_urls,
-            "remote_videos": vid_urls,
-        })
+    # بارگذاری JSON موجود
+    data = load_json_safe()
+    all_posts = data.get("channels", {})
 
-    except Exception as e:
-        print(f"⚠ Error parsing a post in {channel}: {e}")
+    # دریافت پست‌های جدید از همه کانال‌ها
+    async with aiohttp.ClientSession() as session:
+        fetch_tasks = [fetch_channel_posts(session, ch) for ch in channels]
+        results = await asyncio.gather(*fetch_tasks)
+
+    # پردازش هر کانال
+    for channel, new_posts in zip(channels, results):
+        if not new_posts:
+            print(f"⚠ No new posts for @{channel}")
+            continue
+
+        print(f"📝 Found {len(new_posts)} posts for @{channel}")
+
+        # دانلود رسانه‌ها
+        await download_media_for_channel(channel, new_posts)
+
+        # ادغام با پست‌های موجود
+        existing = all_posts.get(channel, [])
+        merged = merge_posts(existing, new_posts, channel)
+
+        # به‌روزرسانی مسیرهای محلی در merged posts
+        # (حذف remote_*ها برای ذخیره‌سازی نهایی)
+        for post in merged:
+            post.pop("remote_images", None)
+            post.pop("remote_videos", None)
+
+        all_posts[channel] = merged
+        print(f"✅ Updated @{channel}: {len(merged)} posts stored")
+
+    # ذخیره نهایی
+    save_json_safe({"channels": all_posts})
+    print("🎉 All done! posts.json saved.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
