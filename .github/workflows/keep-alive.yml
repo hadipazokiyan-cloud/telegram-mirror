@@ -2,13 +2,13 @@ name: Keep Repository Alive
 
 on:
   schedule:
-    - cron: '0 */1 * * *'  # هر 1 ساعت یکبار
+    - cron: '0 */6 * * *'  # هر 6 ساعت یکبار
   workflow_dispatch:
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     
     steps:
     - uses: actions/checkout@v4
