@@ -1,19 +1,29 @@
-// تنظیمات
+// تنظیمات - تشخیص مسیر صحیح
 let postsData = null;
 let currentChannel = null;
 
-// بارگذاری دیتا از فایل JSON
+// تشخیص محیط (GitHub Pages یا لوکال)
+const isGitHubPages = window.location.hostname.includes('github.io');
+const basePath = isGitHubPages ? '/telegram-mirror' : '';
+
+// بارگذاری دیتا از فایل JSON با مسیر صحیح
 async function loadData() {
     try {
-        const response = await fetch('../posts.json');
+        // در GitHub Pages، فایل posts.json در ریشه پروژه است
+        const jsonPath = isGitHubPages ? '../posts.json' : '../posts.json';
+        
+        console.log('Loading from:', jsonPath);
+        
+        const response = await fetch(jsonPath);
         if (!response.ok) {
-            throw new Error('نمیتوان فایل posts.json را بارگذاری کرد');
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         postsData = await response.json();
+        console.log('Data loaded:', postsData);
         return true;
     } catch (error) {
-        console.error('خطا:', error);
-        showError('خطا در بارگذاری داده‌ها: ' + error.message);
+        console.error('Error loading data:', error);
+        showError('خطا در بارگذاری داده‌ها: ' + error.message + '<br>لطفاً ابتدا mirror.py را اجرا کنید.');
         return false;
     }
 }
@@ -24,7 +34,12 @@ function showError(message) {
     container.innerHTML = `
         <div class="error">
             <p>❌ ${message}</p>
-            <p>لطفاً ابتدا mirror.py را اجرا کنید.</p>
+            <p>راه حل:</p>
+            <ol>
+                <li>ابتدا mirror.py را اجرا کنید: <code>python mirror.py</code></li>
+                <li>صبر کنید تا GitHub Actions اجرا شود</li>
+                <li>سپس صفحه را رفرش کنید</li>
+            </ol>
         </div>
     `;
 }
@@ -35,6 +50,7 @@ function populateChannels() {
     select.innerHTML = '<option value="">انتخاب کانال...</option>';
     
     if (!postsData || !postsData.channels) {
+        select.innerHTML = '<option value="">هیچ کانالی یافت نشد</option>';
         return;
     }
     
@@ -118,7 +134,8 @@ function createPostElement(post, channel) {
         mediaDiv.className = 'post-media';
         
         post.media.forEach(media => {
-            const mediaUrl = `../media/${media.file}`;
+            // مسیر صحیح برای فایل‌های media
+            const mediaUrl = isGitHubPages ? `../media/${media.file}` : `../media/${media.file}`;
             
             if (media.type === 'image') {
                 const img = document.createElement('img');
@@ -126,6 +143,10 @@ function createPostElement(post, channel) {
                 img.alt = 'تصویر';
                 img.loading = 'lazy';
                 img.className = 'media-image';
+                img.onerror = () => {
+                    console.error('Failed to load image:', mediaUrl);
+                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-4-3 3-4-4-5 5"%3E%3C/path%3E%3C/svg%3E';
+                };
                 img.onclick = () => openLightbox(mediaUrl);
                 mediaDiv.appendChild(img);
             } else if (media.type === 'video') {
@@ -134,6 +155,9 @@ function createPostElement(post, channel) {
                 video.controls = true;
                 video.className = 'media-video';
                 video.preload = 'metadata';
+                video.onerror = () => {
+                    console.error('Failed to load video:', mediaUrl);
+                };
                 mediaDiv.appendChild(video);
             }
         });
@@ -144,7 +168,7 @@ function createPostElement(post, channel) {
     return div;
 }
 
-// فرمت تاریخ
+// فرمت تاریخ به فارسی
 function formatDate(dateString) {
     if (!dateString) return 'تاریخ نامشخص';
     
@@ -184,12 +208,27 @@ document.getElementById('channelSelect').addEventListener('change', (e) => {
     }
 });
 
-// بارگذاری اولیه
-async function init() {
-    const success = await loadData();
-    if (success) {
-        populateChannels();
+// نمایش وضعیت بروزرسانی
+function showLastUpdate() {
+    const lastUpdateSpan = document.getElementById('lastUpdate');
+    if (lastUpdateSpan && postsData && postsData.last_update) {
+        lastUpdateSpan.textContent = formatDate(postsData.last_update);
     }
 }
 
-init();
+// بارگذاری اولیه
+async function init() {
+    console.log('Initializing viewer...');
+    const success = await loadData();
+    if (success) {
+        populateChannels();
+        showLastUpdate();
+    }
+}
+
+// اجرا پس از بارگذاری کامل صفحه
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
