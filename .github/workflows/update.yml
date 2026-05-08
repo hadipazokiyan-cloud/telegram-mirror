@@ -2,32 +2,131 @@ name: Update Telegram Mirror
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # هر 30 دقیقه
-  workflow_dispatch:  # اجرای دستی
+    # اجرا هر 30 دقیقه (برای آپدیت مکرر)
+    - cron: '*/30 * * * *'
+    
+    # اجرا هر 6 ساعت یکبار (پشتیبان)
+    - cron: '0 */6 * * *'
+    
+    # اجرا در ساعت 2 بامداد هر روز (بازسازی کامل کش)
+    - cron: '0 2 * * *'
+    
+  workflow_dispatch:  # اجرای دستی از گیت‌هاب
 
 jobs:
   update:
     runs-on: ubuntu-latest
     
+    # استراتژی retry در سطح job
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        attempt: [1]  # اولین تلاش
+    
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1  # فقط آخرین commit برای سرعت
     
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Cache media files
+      uses: actions/cache@v4
+      with:
+        path: media
+        key: ${{ runner.os }}-media-${{ github.run_id }}
+        restore-keys: |
+          ${{ runner.os }}-media-
     
     - name: Install dependencies
       run: |
-        pip install requests beautifulsoup4 lxml
+        pip install --upgrade pip
+        pip install -r requirements.txt
     
-    - name: Run mirror script
-      run: python mirror.py
+    - name: Run mirror script with retry
+      id: mirror
+      continue-on-error: true  # اجازه ادامه در صورت خطا
+      run: |
+        python mirror.py || echo "script_failed=true" >> $GITHUB_OUTPUT
+    
+    - name: Retry if failed (اولین تلاش مجدد)
+      if: steps.mirror.outputs.script_failed == 'true'
+      run: |
+        echo "⚠️ اولین تلاش ناموفق بود، 30 ثانیه صبر و تلاش مجدد..."
+        sleep 30
+        python mirror.py || echo "retry1_failed=true" >> $GITHUB_OUTPUT
+    
+    - name: Second retry (دومین تلاش مجدد)
+      if: steps.mirror.outputs.retry1_failed == 'true'
+      run: |
+        echo "⚠️ تلاش دوم ناموفق بود، 60 ثانیه صبر و تلاش مجدد..."
+        sleep 60
+        python mirror.py || echo "retry2_failed=true" >> $GITHUB_OUTPUT
+    
+    - name: Third retry with fresh install (سومین تلاش با ریست کامل)
+      if: steps.mirror.outputs.retry2_failed == 'true'
+      run: |
+        echo "⚠️ تلاش سوم با پاکسازی کش..."
+        rm -rf media/*
+        rm -f posts.json
+        pip install --no-cache-dir -r requirements.txt
+        sleep 90
+        python mirror.py
+    
+    - name: Check for changes
+      id: changes
+      run: |
+        git add posts.json media/ website/
+        if git diff --staged --quiet; then
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "✅ بدون تغییر"
+        else
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "📝 تغییرات یافت شد"
+        fi
     
     - name: Commit and push changes
+      if: steps.changes.outputs.has_changes == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add posts.json media/ website/
-        git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
-        git push
+        git commit -m "🔄 Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
+        
+        # Retry برای push با 3 بار تلاش
+        for i in 1 2 3; do
+          echo "تلاش $i برای push..."
+          if git push; then
+            echo "✅ Push موفقیت‌آمیز بود"
+            break
+          else
+            echo "⚠️ Push ناموفق، 10 ثانیه صبر..."
+            sleep 10
+            git pull --rebase
+          fi
+        done
+    
+    - name: Send notification on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          console.log('❌ آپدیت ناموفق بود!')
+          console.log('لطفاً لاگ‌ها را بررسی کنید')
+    
+    - name: Cleanup old logs
+      run: |
+        # حذف لاگ‌های قدیمی
+        find /home/runner/work/_temp -name "*.log" -mtime +7 -delete 2>/dev/null || true
