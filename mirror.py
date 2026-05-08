@@ -233,7 +233,7 @@ async def fetch_channel_posts(session: aiohttp.ClientSession, channel: str):
         try:
             pid = post.get("data-post", "")
             if "/" in pid:
-                pid pid.split("/")[-1]
+                pid = pid.split("/")[-1]
             pid = pid.strip()
 
             # متن پست
