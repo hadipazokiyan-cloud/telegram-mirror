@@ -806,8 +806,8 @@ def update_channel(channel: str, db: Dict) -> Dict:
             "text": "https://example.com"
           }
         ],
-        "has_media": true,
-        "has_links": true
+        "has_media": True,
+        "has_links": True
       }
     ]
   }
