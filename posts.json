@@ -1,1 +1,20 @@
-
+{
+  "channels": {},
+  "last_update": null,
+  "statistics": {
+    "total_posts": 0,
+    "total_files": 0,
+    "total_links": 0,
+    "files_by_type": {
+      "images": 0,
+      "videos": 0,
+      "audios": 0,
+      "documents": 0,
+      "archives": 0,
+      "applications": 0,
+      "code": 0,
+      "other": 0
+    },
+    "total_size_mb": 0
+  }
+}
