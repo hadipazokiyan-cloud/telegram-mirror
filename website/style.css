@@ -201,3 +201,21 @@ button:hover {
         width: 100%;
     }
 }
+/* اضافه کردن به انتهای فایل */
+footer {
+    margin-top: 40px;
+    padding: 20px;
+    text-align: center;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+}
+
+footer a {
+    color: white;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(255,255,255,0.5);
+}
+
+footer a:hover {
+    border-bottom: 1px solid white;
+}
