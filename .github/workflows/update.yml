@@ -3,89 +3,44 @@ name: Update Telegram Mirror (Debug Mode)
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "*/30 * * * *"
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      # -------------------------------------------------------------
-      # 1. Checkout Repository
-      # -------------------------------------------------------------
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # -------------------------------------------------------------
-      # 2. Setup Python
-      # -------------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # -------------------------------------------------------------
-      # 3. Install Dependencies
-      # -------------------------------------------------------------
-      - name: Install requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      # -------------------------------------------------------------
-      # 4. Debug: List repository BEFORE running script
-      # -------------------------------------------------------------
-      - name: Debug before running script
+      - name: Debug directory
         run: |
           echo "=== CURRENT DIRECTORY ==="
           pwd
           echo "=== FILES ==="
-          ls -R .
+          ls -R
           echo "=== posts.json exists? ==="
-          if [ -f posts.json ]; then cat posts.json; else echo "posts.json NOT FOUND"; fi
+          cat posts.json || echo "posts.json not found"
           echo "=== media folder exists? ==="
-          if [ -d media ]; then ls -R media; else echo "media/ folder NOT FOUND"; fi
+          ls media || echo "media not found"
 
-      # -------------------------------------------------------------
-      # 5. Run the Mirror Script with FULL verbose output
-      # -------------------------------------------------------------
-      - name: Run mirror.py with full debugging
+      - name: Run mirror.py
         run: |
           echo "=== Running mirror.py ==="
-          python3 -u mirror.py || (echo "❌ mirror.py crashed" && exit 1)
+          python mirror.py
 
-      # -------------------------------------------------------------
-      # 6. Debug: List repository AFTER running script
-      # -------------------------------------------------------------
-      - name: Debug after running script
+      - name: Commit changes
         run: |
-          echo "=== FILES AFTER RUN ==="
-          ls -R .
-          echo "=== posts.json content ==="
-          if [ -f posts.json ]; then cat posts.json; else echo "posts.json NOT FOUND"; fi
-          echo "=== MEDIA folder ==="
-          if [ -d media ]; then ls -R media; else echo "media/ folder NOT FOUND"; fi
-
-      # -------------------------------------------------------------
-      # 7. Commit & Push changes
-      # -------------------------------------------------------------
-      - name: Commit & Push updates
-        run: |
-          git config --local user.email "github-actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add -A
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Mirror Update (Debug Mode): $(date +'%Y-%m-%d %H:%M:%S')"
-            git push
-          fi
-
-      # -------------------------------------------------------------
-      - name: Done
-        run: |
-          echo "✔️ DEBUG WORKFLOW FINISHED"
-
+          git config --global user.name "mirror-bot"
+          git config --global user.email "bot@example.com"
+          git add .
+          git commit -m "Update mirror" || echo "No changes to commit"
+          git push
