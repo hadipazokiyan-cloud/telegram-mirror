@@ -1716,5 +1716,21 @@
       }
     ]
   },
-  "last_update": "2026-05-08T16:14:48.382129"
+  "last_update": "2026-05-08T17:51:20.394876",
+  "statistics": {
+    "total_posts": 217,
+    "total_files": 81,
+    "files_by_type": {
+      "images": 0,
+      "videos": 0,
+      "audios": 0,
+      "documents": 0,
+      "archives": 0,
+      "applications": 0,
+      "code": 0,
+      "other": 0
+    },
+    "total_size_mb": 0.32,
+    "last_calculation": "2026-05-08T17:51:20.395685"
+  }
 }
