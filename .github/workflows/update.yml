@@ -1,132 +1,248 @@
-name: Update Telegram Mirror
+name: 🔄 Telegram Mirror Auto-Update
 
 on:
   schedule:
-    # اجرا هر 30 دقیقه (برای آپدیت مکرر)
+    # اجرا هر 30 دقیقه - اصلی‌ترین زمان
     - cron: '*/30 * * * *'
     
-    # اجرا هر 6 ساعت یکبار (پشتیبان)
+    # اجرا هر 2 ساعت - پشتیبان
+    - cron: '0 */2 * * *'
+    
+    # اجرا هر 6 ساعت - پشتیبان سطح دو
     - cron: '0 */6 * * *'
     
-    # اجرا در ساعت 2 بامداد هر روز (بازسازی کامل کش)
+    # اجرا هر روز ساعت 2 بامداد - بازسازی کامل
     - cron: '0 2 * * *'
     
-  workflow_dispatch:  # اجرای دستی از گیت‌هاب
+  # اجرای دستی از داخل گیت‌هاب
+  workflow_dispatch:
+    inputs:
+      force_clean:
+        description: 'پاکسازی کامل و دانلود مجدد'
+        required: false
+        type: boolean
+        default: false
+
+  # اجرا هنگام push به main
+  push:
+    branches:
+      - main
+    paths:
+      - 'list.txt'
+      - 'mirror.py'
+
+# تنظیمات سطح بالا
+env:
+  PYTHON_VERSION: '3.11'
+  TZ: 'Asia/Tehran'
 
 jobs:
-  update:
+  update-mirror:
+    name: 🚀 Update Telegram Channels
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # حداکثر زمان اجرا
     
     # استراتژی retry در سطح job
     strategy:
-      max-parallel: 1
-      fail-fast: false
-      matrix:
-        attempt: [1]  # اولین تلاش
+      fail-fast: false  # اگر یکی failed شد بقیه ادامه بدن
+      max-parallel: 1   # فقط یک job همزمان
     
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 1  # فقط آخرین commit برای سرعت
-    
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-    
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Cache media files
-      uses: actions/cache@v4
-      with:
-        path: media
-        key: ${{ runner.os }}-media-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-media-
-    
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Run mirror script with retry
-      id: mirror
-      continue-on-error: true  # اجازه ادامه در صورت خطا
-      run: |
-        python mirror.py || echo "script_failed=true" >> $GITHUB_OUTPUT
-    
-    - name: Retry if failed (اولین تلاش مجدد)
-      if: steps.mirror.outputs.script_failed == 'true'
-      run: |
-        echo "⚠️ اولین تلاش ناموفق بود، 30 ثانیه صبر و تلاش مجدد..."
-        sleep 30
-        python mirror.py || echo "retry1_failed=true" >> $GITHUB_OUTPUT
-    
-    - name: Second retry (دومین تلاش مجدد)
-      if: steps.mirror.outputs.retry1_failed == 'true'
-      run: |
-        echo "⚠️ تلاش دوم ناموفق بود، 60 ثانیه صبر و تلاش مجدد..."
-        sleep 60
-        python mirror.py || echo "retry2_failed=true" >> $GITHUB_OUTPUT
-    
-    - name: Third retry with fresh install (سومین تلاش با ریست کامل)
-      if: steps.mirror.outputs.retry2_failed == 'true'
-      run: |
-        echo "⚠️ تلاش سوم با پاکسازی کش..."
-        rm -rf media/*
-        rm -f posts.json
-        pip install --no-cache-dir -r requirements.txt
-        sleep 90
-        python mirror.py
-    
-    - name: Check for changes
-      id: changes
-      run: |
-        git add posts.json media/ website/
-        if git diff --staged --quiet; then
-          echo "has_changes=false" >> $GITHUB_OUTPUT
-          echo "✅ بدون تغییر"
-        else
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "📝 تغییرات یافت شد"
-        fi
-    
-    - name: Commit and push changes
-      if: steps.changes.outputs.has_changes == 'true'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git commit -m "🔄 Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
-        
-        # Retry برای push با 3 بار تلاش
-        for i in 1 2 3; do
-          echo "تلاش $i برای push..."
-          if git push; then
-            echo "✅ Push موفقیت‌آمیز بود"
-            break
+      # 1. Checkout کد
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      
+      # 2. Setup Python با کش
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
+      
+      # 3. تنظیم زمان ایران
+      - name: 🕐 Set timezone
+        run: |
+          sudo timedatectl set-timezone ${{ env.TZ }}
+          date
+      
+      # 4. کش پکیج‌های pip
+      - name: 💾 Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      # 5. کش فایل‌های مدیا (برای جلوگیری از دانلود مجدد)
+      - name: 🖼️ Cache media files
+        uses: actions/cache@v4
+        with:
+          path: media
+          key: ${{ runner.os }}-media-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-media-
+      
+      # 6. نصب وابستگی‌ها با retry
+      - name: 📦 Install dependencies
+        id: install
+        continue-on-error: false
+        run: |
+          pip install --upgrade pip setuptools wheel
+          for i in 1 2 3; do
+            echo "🔧 Install attempt $i..."
+            if pip install -r requirements.txt; then
+              echo "✅ Installation successful"
+              break
+            else
+              echo "⚠️ Attempt $i failed"
+              if [ $i -eq 3 ]; then
+                echo "❌ Installation failed after 3 attempts"
+                exit 1
+              fi
+              sleep 10
+            fi
+          done
+      
+      # 7. ایجاد پوشه‌های لازم
+      - name: 📁 Create directories
+        run: |
+          mkdir -p media/{images,videos,audios,documents,archives,applications,code,other}
+          mkdir -p website
+          ls -la media/
+      
+      # 8. اجرای اسکریپت اصلی با retry mechanism
+      - name: 🏃 Run mirror script
+        id: mirror
+        continue-on-error: true
+        run: |
+          echo "🚀 Starting mirror script at $(date)"
+          
+          # اجرای اسکریپت و ذخیره خروجی
+          if python mirror.py; then
+            echo "✅ Mirror script completed successfully"
+            echo "success=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ Push ناموفق، 10 ثانیه صبر..."
-            sleep 10
-            git pull --rebase
+            exit_code=$?
+            echo "❌ Mirror script failed with exit code: $exit_code"
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           fi
-        done
-    
-    - name: Send notification on failure
-      if: failure()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          console.log('❌ آپدیت ناموفق بود!')
-          console.log('لطفاً لاگ‌ها را بررسی کنید')
-    
-    - name: Cleanup old logs
-      run: |
-        # حذف لاگ‌های قدیمی
-        find /home/runner/work/_temp -name "*.log" -mtime +7 -delete 2>/dev/null || true
+      
+      # 9. تلاش مجدد در صورت خطا (اولین retry)
+      - name: 🔄 First retry after 30 seconds
+        if: steps.mirror.outputs.success == 'false'
+        run: |
+          echo "⚠️ First attempt failed, retrying after 30 seconds..."
+          sleep 30
+          
+          if python mirror.py; then
+            echo "✅ Retry successful"
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Retry failed"
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # 10. تلاش مجدد دوم (با پاکسازی کش)
+      - name: 🔄 Second retry with cache clean
+        if: steps.mirror.outputs.success == 'false'
+        run: |
+          echo "⚠️ Second attempt failed, clearing cache and retrying..."
+          rm -rf ~/.cache/pip
+          pip install --no-cache-dir -r requirements.txt
+          sleep 60
+          
+          if python mirror.py; then
+            echo "✅ Second retry successful"
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ All retries failed"
+          fi
+      
+      # 11. بررسی تغییرات
+      - name: 🔍 Check for changes
+        id: changes
+        run: |
+          git add posts.json media/ website/
+          
+          if git diff --staged --quiet; then
+            echo "📭 No changes detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            CHANGES=$(git diff --staged --stat)
+            echo "📝 Changes detected:"
+            echo "$CHANGES"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      # 12. Commit و push با retry
+      - name: 💾 Commit and push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git commit -m "🔄 Auto-update: $(date +'%Y-%m-%d %H:%M:%S')
+          
+          Automated update from GitHub Actions
+          - Updated posts from channels
+          - Downloaded new media files"
+          
+          # تلاش برای push با 5 بار retry
+          for i in 1 2 3 4 5; do
+            echo "📤 Push attempt $i/5..."
+            
+            if git push origin main; then
+              echo "✅ Push successful!"
+              exit 0
+            else
+              echo "⚠️ Push attempt $i failed"
+              if [ $i -lt 5 ]; then
+                echo "🔄 Pulling latest changes and retrying..."
+                git pull --rebase origin main
+                sleep 5
+              fi
+            fi
+          done
+          
+          echo "❌ Push failed after 5 attempts"
+          exit 1
+      
+      # 13. ذخیره لاگ برای دیباگ
+      - name: 📋 Save logs
+        if: always()
+        run: |
+          mkdir -p logs
+          echo "Last run: $(date)" > logs/last_run.txt
+          echo "Status: ${{ steps.mirror.outputs.success }}" >> logs/last_run.txt
+          
+          # آمار فایل‌ها
+          echo "" >> logs/last_run.txt
+          echo "Media files count:" >> logs/last_run.txt
+          find media -type f | wc -l >> logs/last_run.txt
+          echo "Media total size:" >> logs/last_run.txt
+          du -sh media >> logs/last_run.txt
+      
+      # 14. آپلود آرتیفکت (برای دیباگ در صورت خطا)
+      - name: 📦 Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs
+          path: |
+            logs/
+            posts.json
+          retention-days: 3
+      
+      # 15. اطلاع‌رسانی (اختیاری)
+      - name: 📢 Notify on persistent failure
+        if: failure() && github.run_attempt >= 3
+        run: |
+          echo "⚠️ WARNING: Multiple update failures detected!"
+          echo "Please check the repository manually."
+          echo "Last run: $(date)"
