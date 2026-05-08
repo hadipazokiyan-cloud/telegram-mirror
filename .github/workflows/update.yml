@@ -1,37 +1,24 @@
-name: 🔄 Telegram Mirror Auto-Update
+name: 🔥 Force Update - Complete Cache Clean
 
 on:
-  schedule:
-    # اجرا هر 30 دقیقه
-    - cron: '*/30 * * * *'
-  
-  # اجرای دستی از گیت‌هاب
   workflow_dispatch:
     inputs:
-      force_clean:
-        description: 'پاکسازی کامل کش و دانلود مجدد'
+      clean_all:
+        description: 'پاکسازی کامل همه چیز (کش، دیتابیس، مدیا)'
+        required: false
+        type: boolean
+        default: true
+      keep_media:
+        description: 'نگهداری فایل‌های مدیا (فقط کش و دیتابیس پاک شود)'
         required: false
         type: boolean
         default: false
 
-  # اجرا هنگام تغییر فایل‌های کلیدی
-  push:
-    branches:
-      - main
-    paths:
-      - 'list.txt'
-      - 'mirror.py'
-      - 'requirements.txt'
-
-env:
-  PYTHON_VERSION: '3.11'
-  TZ: 'Asia/Tehran'
-
 jobs:
-  update-mirror:
-    name: 🚀 Update Telegram Channels
+  force-update:
+    name: 🔥 Force Update & Clean Cache
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     
     steps:
       # ============================================
@@ -41,79 +28,175 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          persist-credentials: true
 
       # ============================================
-      # 2. Setup Python با کش
+      # 2. Setup Python
       # ============================================
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: 'requirements.txt'
+          python-version: '3.11'
 
       # ============================================
-      # 3. تنظیم زمان ایران
+      # 3. پاکسازی کامل کش پایتون
       # ============================================
-      - name: 🕐 Set timezone
+      - name: 🧹 Clean Python cache
         run: |
-          sudo timedatectl set-timezone ${{ env.TZ }}
-          date
+          echo "=========================================="
+          echo "🧹 CLEANING PYTHON CACHE"
+          echo "=========================================="
+          
+          # حذف کش پایتون
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+          find . -type f -name "*.pyc" -delete 2>/dev/null || true
+          find . -type f -name "*.pyo" -delete 2>/dev/null || true
+          
+          # حذف کش pip
+          pip cache purge 2>/dev/null || true
+          rm -rf ~/.cache/pip 2>/dev/null || true
+          
+          echo "✅ Python cache cleaned"
 
       # ============================================
-      # 4. نصب وابستگی‌ها
+      # 4. پاکسازی کش HTML
       # ============================================
-      - name: 📦 Install dependencies
+      - name: 🧹 Clean HTML cache
         run: |
+          echo "=========================================="
+          echo "🧹 CLEANING HTML CACHE"
+          echo "=========================================="
+          
+          rm -rf _cache_html/ 2>/dev/null || true
+          rm -rf .cache/ 2>/dev/null || true
+          rm -rf html_cache/ 2>/dev/null || true
+          
+          echo "✅ HTML cache cleaned"
+
+      # ============================================
+      # 5. پاکسازی دیتابیس
+      # ============================================
+      - name: 🧹 Clean database
+        run: |
+          echo "=========================================="
+          echo "🧹 CLEANING DATABASE"
+          echo "=========================================="
+          
+          # بکاپ از دیتابیس قدیمی (در صورت وجود)
+          if [ -f "posts.json" ]; then
+            cp posts.json posts.json.backup.$(date +%Y%m%d_%H%M%S)
+            echo "📦 Backup created: posts.json.backup.*"
+          fi
+          
+          # حذف فایل‌های دیتابیس
+          rm -f posts.json 2>/dev/null || true
+          rm -f posts.json.tmp 2>/dev/null || true
+          rm -f posts.json.corrupt 2>/dev/null || true
+          
+          echo "✅ Database cleaned"
+
+      # ============================================
+      # 6. پاکسازی پوشه media (اختیاری)
+      # ============================================
+      - name: 🧹 Clean media files
+        if: github.event.inputs.clean_all == 'true'
+        run: |
+          echo "=========================================="
+          echo "🧹 CLEANING MEDIA FILES"
+          echo "=========================================="
+          
+          # حذف کامل پوشه media
+          rm -rf media/ 2>/dev/null || true
+          
+          # ایجاد پوشه‌های خالی
+          mkdir -p media/{images,videos,audios,documents,archives,applications,code,other}
+          
+          echo "✅ Media files cleaned"
+
+      # ============================================
+      # 7. نمایش وضعیت قبل از اجرا
+      # ============================================
+      - name: 📊 Status before update
+        run: |
+          echo "=========================================="
+          echo "📊 STATUS BEFORE UPDATE"
+          echo "=========================================="
+          
+          echo "📁 Current directory:"
+          ls -la
+          
+          echo ""
+          echo "📁 Media directory (if exists):"
+          if [ -d "media" ]; then
+            ls -la media/ | head -20
+            echo "Total media files: $(find media -type f 2>/dev/null | wc -l)"
+          else
+            echo "Media directory does not exist"
+          fi
+          
+          echo ""
+          echo "📄 posts.json:"
+          if [ -f "posts.json" ]; then
+            echo "Size: $(du -sh posts.json | cut -f1)"
+            echo "Content preview:"
+            head -20 posts.json
+          else
+            echo "posts.json does not exist"
+          fi
+
+      # ============================================
+      # 8. نصب وابستگی‌ها (بدون کش)
+      # ============================================
+      - name: 📦 Install dependencies (no cache)
+        run: |
+          echo "=========================================="
+          echo "📦 INSTALLING DEPENDENCIES"
+          echo "=========================================="
+          
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --no-cache-dir -r requirements.txt
+          
+          echo "✅ Dependencies installed"
 
       # ============================================
-      # 5. پاکسازی اجباری (در صورت درخواست)
-      # ============================================
-      - name: 🔥 Force clean (if requested)
-        if: github.event.inputs.force_clean == 'true'
-        run: |
-          echo "🧹 Force cleaning cache and old data..."
-          rm -rf media/*
-          rm -f posts.json
-          rm -rf __pycache__
-          echo "✅ Clean completed"
-
-      # ============================================
-      # 6. ایجاد پوشه‌های لازم
+      # 9. ایجاد پوشه‌های لازم
       # ============================================
       - name: 📁 Create directories
         run: |
           mkdir -p media/{images,videos,audios,documents,archives,applications,code,other}
           mkdir -p website
           mkdir -p logs
+          echo "✅ Directories created"
 
       # ============================================
-      # 7. نمایش لیست کانال‌ها (برای دیباگ)
+      # 10. ایجاد فایل posts.json خالی (در صورت نیاز)
       # ============================================
-      - name: 📋 Display channel list
+      - name: 📄 Create empty posts.json if not exists
         run: |
-          echo "=========================================="
-          echo "Active channels in list.txt:"
-          echo "=========================================="
-          cat list.txt | grep -v '^#' | grep -v '^$' || echo "No channels found!"
-          echo "=========================================="
+          if [ ! -f "posts.json" ]; then
+            echo '{"channels": {}, "last_update": null}' > posts.json
+            echo "✅ Empty posts.json created"
+          fi
 
       # ============================================
-      # 8. اجرای اسکریپت اصلی
+      # 11. اجرای اسکریپت میرور
       # ============================================
       - name: 🏃 Run mirror script
         id: mirror
-        continue-on-error: false
         run: |
-          echo "🚀 Starting mirror script at $(date)"
-          python mirror.py
-          echo "✅ Mirror script completed at $(date)"
+          echo "=========================================="
+          echo "🚀 RUNNING MIRROR SCRIPT"
+          echo "=========================================="
+          echo "Start time: $(date)"
+          echo ""
+          
+          python mirror.py 2>&1 | tee mirror_output.log
+          
+          echo ""
+          echo "End time: $(date)"
+          echo "✅ Mirror script completed"
 
       # ============================================
-      # 9. بررسی تغییرات
+      # 12. بررسی تغییرات
       # ============================================
       - name: 🔍 Check for changes
         id: changes
@@ -130,7 +213,7 @@ jobs:
           fi
 
       # ============================================
-      # 10. Commit و Push (در صورت وجود تغییر)
+      # 13. Commit و Push
       # ============================================
       - name: 💾 Commit and push changes
         if: steps.changes.outputs.has_changes == 'true'
@@ -138,9 +221,8 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           
-          git commit -m "🔄 Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
+          git commit -m "🔥 Force update: $(date +'%Y-%m-%d %H:%M:%S')"
           
-          # تلاش برای push با 3 بار retry
           for i in 1 2 3; do
             if git push origin main; then
               echo "✅ Push successful!"
@@ -153,9 +235,9 @@ jobs:
           done
 
       # ============================================
-      # 11. نمایش آمار نهایی
+      # 14. نمایش آمار نهایی
       # ============================================
-      - name: 📊 Show statistics
+      - name: 📊 Final statistics
         if: always()
         run: |
           echo "=========================================="
@@ -164,26 +246,59 @@ jobs:
           
           if [ -f "posts.json" ]; then
             echo "📁 posts.json size: $(du -sh posts.json | cut -f1)"
-            echo "📺 Channels in DB: $(python -c "import json; print(len(json.load(open('posts.json'))['channels']))" 2>/dev/null || echo 'Error')"
+            echo ""
+            python3 << 'EOF'
+            import json
+            try:
+                with open('posts.json', 'r') as f:
+                    data = json.load(f)
+                channels = data.get('channels', {})
+                total_posts = sum(len(posts) for posts in channels.values())
+                total_media = 0
+                for posts in channels.values():
+                    for post in posts:
+                        total_media += len(post.get('media', []))
+                print(f"📺 Channels: {len(channels)}")
+                print(f"📝 Total posts: {total_posts}")
+                print(f"🖼️ Total media: {total_media}")
+                print(f"🕐 Last update: {data.get('last_update', 'N/A')}")
+            except Exception as e:
+                print(f"Error reading posts.json: {e}")
+            EOF
           fi
           
+          echo ""
+          echo "📁 Media files:"
           if [ -d "media" ]; then
-            echo "📁 Media files: $(find media -type f 2>/dev/null | wc -l)"
-            echo "💾 Media size: $(du -sh media 2>/dev/null | cut -f1)"
+            echo "   Count: $(find media -type f 2>/dev/null | wc -l)"
+            echo "   Size: $(du -sh media 2>/dev/null | cut -f1)"
           fi
           
           echo "=========================================="
 
       # ============================================
-      # 12. ذخیره لاگ در صورت خطا
+      # 15. ذخیره لاگ برای دیباگ
       # ============================================
-      - name: 📦 Upload logs on failure
-        if: failure()
+      - name: 📦 Upload logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: debug-logs-${{ github.run_id }}
+          name: force-update-logs-${{ github.run_id }}
           path: |
             mirror_output.log
             posts.json
-            list.txt
-          retention-days: 3
+            posts.json.backup.*
+          retention-days: 7
+
+      # ============================================
+      # 16. اعلان اتمام
+      # ============================================
+      - name: ✅ Completion message
+        run: |
+          echo "=========================================="
+          echo "✅ FORCE UPDATE COMPLETED"
+          echo "=========================================="
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Status: ${{ job.status }}"
+          echo "Logs saved as artifact"
+          echo "=========================================="
