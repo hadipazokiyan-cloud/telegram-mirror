@@ -229,26 +229,44 @@ async def fetch_channel_posts(session: aiohttp.ClientSession, channel: str):
 
     parsed_posts = []
 
-    for post in raw_posts:
-        try:
-            pid = post.get("data-post", "")
-            if "/" in pid:
-                pid = pid.split("/")[-1]
-            pid = pid.strip()
+   for post in raw_posts:
+    try:
+        pid = post.get("data-post", "")
+        if "/" in pid:
+            pid = pid.split("/")[-1]
+        pid = pid.strip()
 
-            # متن پست
-            text_el = post.select_one(".tgme_widget_message_text")
-            text = text_el.get_text("\n").strip() if text_el else ""
+        # متن پست
+        text_el = post.select_one(".tgme_widget_message_text")
+        text = text_el.get_text("\n").strip() if text_el else ""
 
-            # تاریخ/زمان
-            date_el = post.select_one("time")
-            date = date_el.get("datetime", "") if date_el else ""
+        # تاریخ/زمان
+        date_el = post.select_one("time")
+        date = date_el.get("datetime", "") if date_el else ""
 
-            # رسانه
-            img_urls, vid_urls = extract_media_from_post(post)
+        # رسانه
+        img_urls, vid_urls = extract_media_from_post(post)
 
-            # نگاشت URLها به مسیرهای محلی
-            local_images = []
-            for idx, img_url in enumerate(img_urls):
-                fname = local_media_name(channel, pid, idx, img_url, "img")
-                local_images.append(str(MEDIA_DIR /
+        # نگاشت URLها به مسیرهای محلی
+        local_images = []
+        for idx, img_url in enumerate(img_urls):
+            fname = local_media_name(channel, pid, idx, img_url, "img")
+            local_images.append(str(MEDIA_DIR / fname))
+
+        local_videos = []
+        for idx, vid_url in enumerate(vid_urls):
+            fname = local_media_name(channel, pid, idx, vid_url, "vid")
+            local_videos.append(str(MEDIA_DIR / fname))
+
+        parsed_posts.append({
+            "id": pid,
+            "text": text,
+            "date": date,
+            "images": local_images,
+            "videos": local_videos,
+            "remote_images": img_urls,
+            "remote_videos": vid_urls,
+        })
+
+    except Exception as e:
+        print(f"⚠ Error parsing a post in {channel}: {e}")
