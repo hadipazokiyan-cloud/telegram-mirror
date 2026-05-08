@@ -1,27 +1,115 @@
-name: Keep Repository Alive
+name: 💚 Keep Repository Alive
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # هر 6 ساعت یکبار
+    # هر 6 ساعت یکبار - برای جلوگیری از خوابیدن ریپو
+    - cron: '0 */6 * * *'
+    
+    # هر روز ساعت 12 ظهر
+    - cron: '0 12 * * *'
+    
+    # هر روز ساعت 12 شب
+    - cron: '0 0 * * *'
+  
+  # اجرای دستی
   workflow_dispatch:
+
+# هیچ Job اضافی برای pull request نیست
+permissions:
+  contents: write
+  actions: read
 
 jobs:
   keep-alive:
+    name: 🫀 Keep Repository Active
     runs-on: ubuntu-latest
     timeout-minutes: 5
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Update timestamp
-      run: |
-        echo "Last keep-alive: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > .last-update
-        echo "Status: ✅ Active" >> .last-update
-    
-    - name: Commit changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "Keep Alive Bot"
-        git add .last-update
-        git diff --quiet && git diff --staged --quiet || git commit -m "⏰ Keep-alive: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-        git push || echo "No changes to push"
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      
+      - name: 🕐 Get current time
+        id: time
+        run: |
+          echo "current_time=$(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+          echo "current_date=$(date -u '+%Y-%m-%d')" >> $GITHUB_OUTPUT
+      
+      - name: 📝 Update alive timestamp
+        run: |
+          # ایجاد یا آپدیت فایل timestamp
+          echo "# 🕐 Repository Keep-Alive Status" > .alive
+          echo "" >> .alive
+          echo "Last successful check: ${{ steps.time.outputs.current_time }}" >> .alive
+          echo "Status: ✅ Active and healthy" >> .alive
+          echo "Timezone: UTC" >> .alive
+          echo "" >> .alive
+          echo "## Recent Activity" >> .alive
+          echo "- Auto-update enabled" >> .alive
+          echo "- GitHub Pages active" >> .alive
+          echo "- Media storage active" >> .alive
+      
+      - name: 🔍 Check for changes
+        id: changes
+        run: |
+          git add .alive
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "📭 No changes to commit"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Updating keep-alive timestamp"
+          fi
+      
+      - name: 💾 Commit and push
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.name "keep-alive[bot]"
+          git config --local user.email "keep-alive[bot]@users.noreply.github.com"
+          
+          git commit -m "💚 Keep-alive: ${{ steps.time.outputs.current_time }}"
+          
+          for i in 1 2 3; do
+            if git push origin main; then
+              echo "✅ Keep-alive updated successfully"
+              break
+            else
+              echo "⚠️ Push attempt $i failed"
+              if [ $i -lt 3 ]; then
+                sleep 5
+                git pull --rebase origin main
+              fi
+            fi
+          done
+      
+      - name: 📊 Check repository health
+        run: |
+          echo "📊 Repository Health Check:"
+          echo "=========================="
+          
+          # تعداد فایل‌های media
+          if [ -d "media" ]; then
+            MEDIA_COUNT=$(find media -type f 2>/dev/null | wc -l)
+            echo "📁 Media files: $MEDIA_COUNT"
+            if [ -f "posts.json" ]; then
+              MEDIA_SIZE=$(du -sh media 2>/dev/null | cut -f1)
+              echo "💾 Media size: $MEDIA_SIZE"
+            fi
+          else
+            echo "⚠️ Media directory not found"
+          fi
+          
+          # آخرین commit
+          echo "📝 Last commit: $(git log -1 --format='%h - %s (%ar)')"
+          
+          # وضعیت GitHub Pages
+          echo "🌐 GitHub Pages: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/website/viewer-advanced.html"
+      
+      - name: 📈 Generate activity badge
+        if: success()
+        run: |
+          # ایجاد نشانگر فعالیت
+          echo "![Active](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)" > .badge.md
+          echo "Last updated: ${{ steps.time.outputs.current_time }}" >> .badge.md
