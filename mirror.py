@@ -782,33 +782,91 @@ def update_channel(channel: str, db: Dict) -> Dict:
     print(f"     • کل لینک‌ها: {total_links}")
     
     return db
+    return db
 
-{
-  "channels": {
-    "durov": [
-      {
-        "id": 504,
-        "text": "متن پست با لینک‌های https://example.com خارجی",
-        "date": "2026-05-08T16:00:22+00:00",
-        "media": [
-          {
-            "type": "image",
-            "subfolder": "images",
-            "file": "durov_504_0_abc123.jpg",
-            "path": "images/durov_504_0_abc123.jpg",
-            "icon": "🖼️"
-          }
-        ],
-        "links": [
-          {
-            "url": "https://example.com",
-            "type": "external",
-            "text": "https://example.com"
-          }
-        ],
-        "has_media": True,
-        "has_links": True
-      }
-    ]
-  }
-}
+
+# ============================================
+# توابع نمایش آمار و اصلی
+# ============================================
+
+def print_statistics(db: Dict):
+    """نمایش آمار کامل"""
+    stats = db.get("statistics", {})
+    
+    print("\n" + "="*60)
+    print("📊 آمار نهایی")
+    print("="*60)
+    print(f"📺 کانال‌ها: {len(db.get('channels', {}))}")
+    print(f"📝 کل پست‌ها: {stats.get('total_posts', 0):,}")
+    print(f"📎 کل فایل‌ها: {stats.get('total_files', 0):,}")
+    print(f"🔗 کل لینک‌ها: {stats.get('total_links', 0):,}")
+    print(f"💾 حجم کل: {stats.get('total_size_mb', 0):,} MB")
+    print(f"🕐 آخرین بروزرسانی: {db.get('last_update', 'ندارد')}")
+    
+    print("\n📂 تفکیک بر اساس نوع فایل:")
+    files_by_type = stats.get('files_by_type', {})
+    for file_type, count in sorted(files_by_type.items(), key=lambda x: x[1], reverse=True):
+        if count > 0 and file_type != 'links':
+            icon = FILE_CATEGORIES.get(file_type, FILE_CATEGORIES['other'])['icon']
+            print(f"   {icon} {file_type}: {count:,} فایل")
+    
+    print("="*60)
+
+
+def main():
+    """تابع اصلی"""
+    start_time = time.time()
+    
+    print("="*60)
+    print("🪞 Telegram Mirror - Complete Version with All Files & Links")
+    print("="*60)
+    print(f"⏰ شروع: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"⚙️ تنظیمات:")
+    print(f"   • حداکثر حجم هر فایل: {MAX_FILE_SIZE_MB} MB")
+    print(f"   • حداکثر حجم کل: {MAX_TOTAL_SIZE_MB} MB")
+    print(f"   • حداکثر پست هر کانال: {MAX_POSTS_PER_CHANNEL}")
+    print(f"   • پشتیبانی از لینک‌های خارجی: ✓ فعال")
+    print("="*60)
+    
+    # ایجاد پوشه‌ها
+    ensure_directories()
+    
+    # بارگذاری کانال‌ها
+    channels = load_channels()
+    if not channels:
+        print("\n❌ برنامه متوقف شد. کانالی برای پردازش وجود ندارد.")
+        return
+    
+    # بارگذاری دیتابیس
+    db = load_posts_db()
+    
+    # بروزرسانی هر کانال
+    for channel in channels:
+        db = update_channel(channel, db)
+    
+    # پاکسازی فایل‌های قدیمی
+    cleanup_old_files(db)
+    
+    # بروزرسانی زمان آخرین اجرا
+    db["last_update"] = datetime.now().isoformat()
+    
+    # ذخیره دیتابیس
+    save_posts_db(db)
+    
+    # نمایش آمار
+    print_statistics(db)
+    
+    elapsed = time.time() - start_time
+    print(f"\n⏱️ زمان اجرا: {elapsed:.2f} ثانیه")
+    print("✅ عملیات با موفقیت کامل شد!")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n⚠️ برنامه توسط کاربر متوقف شد.")
+    except Exception as e:
+        print(f"\n❌ خطای غیرمنتظره: {e}")
+        import traceback
+        traceback.print_exc()
