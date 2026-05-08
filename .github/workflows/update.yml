@@ -1,46 +1,33 @@
-name: Update Telegram Mirror (Debug Mode)
+name: Update Telegram Mirror
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: '*/30 * * * *'  # هر 30 دقیقه
+  workflow_dispatch:  # اجرای دستی
 
 jobs:
   update:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Debug directory
-        run: |
-          echo "=== CURRENT DIRECTORY ==="
-          pwd
-          echo "=== FILES ==="
-          ls -R
-          echo "=== posts.json exists? ==="
-          cat posts.json || echo "posts.json not found"
-          echo "=== media folder exists? ==="
-          ls media || echo "media not found"
-
-      - name: Run mirror.py
-        run: |
-          echo "=== Running mirror.py ==="
-          python mirror.py
-
-      - name: Commit changes
-        run: |
-          git config --global user.name "mirror-bot"
-          git config --global user.email "bot@example.com"
-          git add .
-          git commit -m "Update mirror" || echo "No changes to commit"
-          git push
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 lxml
+    
+    - name: Run mirror script
+      run: python mirror.py
+    
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add posts.json media/ website/
+        git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
+        git push
