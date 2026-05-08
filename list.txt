@@ -1,4 +1,4 @@
-durov
+whitedns
 FVpnProxy
 ZibaNabz
 configraygan
@@ -7,3 +7,6 @@ Broz_time
 v2rayngsaz
 IranintlTV
 tavaanatech
+Config_HATunnel
+FreakConfig
+echo_center
