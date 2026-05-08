@@ -1,15 +1,13 @@
 {
-  "mychannel": [
-    {
-      "id": 101,
-      "text": "Hello World",
-      "date": "2026-05-08 14:09:58.220559",
-      "media": [
-        {
-          "url": "https://picsum.photos/300/200",
-          "file": "mychannel_101_0_2de8e8f540c0.jpg"
-        }
-      ]
-    }
-  ]
+  "channels": {
+    "durov": [],
+    "FVpnProxy": [],
+    "ZibaNabz": [],
+    "configraygan": [],
+    "IRNOTPHONE": [],
+    "Broz_time": [],
+    "v2rayngsaz": [],
+    "IranintlTV": [],
+    "tavaanatech": []
+  }
 }
