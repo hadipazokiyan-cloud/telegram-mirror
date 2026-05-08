@@ -1,20 +1,11 @@
-name: 🔄 Telegram Mirror Auto-Update
+name: 🔄 Telegram Mirror Auto-Update (Debug Mode)
 
 on:
   schedule:
-    # اجرا هر 30 دقیقه - اصلی‌ترین زمان
+    # هر 30 دقیقه
     - cron: '*/30 * * * *'
-    
-    # اجرا هر 2 ساعت - پشتیبان
-    - cron: '0 */2 * * *'
-    
-    # اجرا هر 6 ساعت - پشتیبان سطح دو
-    - cron: '0 */6 * * *'
-    
-    # اجرا هر روز ساعت 2 بامداد - بازسازی کامل
-    - cron: '0 2 * * *'
-    
-  # اجرای دستی از داخل گیت‌هاب
+  
+  # اجرای دستی
   workflow_dispatch:
     inputs:
       force_clean:
@@ -22,8 +13,13 @@ on:
         required: false
         type: boolean
         default: false
+      debug_mode:
+        description: 'حالت دیباگ (نمایش خروجی کامل)'
+        required: false
+        type: boolean
+        default: true
 
-  # اجرا هنگام push به main
+  # اجرا هنگام push
   push:
     branches:
       - main
@@ -31,156 +27,358 @@ on:
       - 'list.txt'
       - 'mirror.py'
 
-# تنظیمات سطح بالا
 env:
   PYTHON_VERSION: '3.11'
   TZ: 'Asia/Tehran'
+  DEBUG: 'true'
 
 jobs:
-  update-mirror:
-    name: 🚀 Update Telegram Channels
+  debug-and-update:
+    name: 🔍 Debug & Update Telegram Channels
     runs-on: ubuntu-latest
-    timeout-minutes: 20  # حداکثر زمان اجرا
-    
-    # استراتژی retry در سطح job
-    strategy:
-      fail-fast: false  # اگر یکی failed شد بقیه ادامه بدن
-      max-parallel: 1   # فقط یک job همزمان
+    timeout-minutes: 25
     
     steps:
-      # 1. Checkout کد
+      # ============================================
+      # مرحله 1: Checkout کد
+      # ============================================
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           persist-credentials: true
-      
-      # 2. Setup Python با کش
+
+      # ============================================
+      # مرحله 2: نمایش اطلاعات اولیه
+      # ============================================
+      - name: 📊 System Information
+        run: |
+          echo "=========================================="
+          echo "🖥️ System Information"
+          echo "=========================================="
+          echo "OS: $(uname -a)"
+          echo "Date: $(date)"
+          echo "GitHub Run ID: ${{ github.run_id }}"
+          echo "Debug Mode: ${{ github.event.inputs.debug_mode || 'true' }}"
+          echo "Force Clean: ${{ github.event.inputs.force_clean || 'false' }}"
+          echo "=========================================="
+
+      # ============================================
+      # مرحله 3: Setup Python
+      # ============================================
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-          cache-dependency-path: 'requirements.txt'
-      
-      # 3. تنظیم زمان ایران
-      - name: 🕐 Set timezone
-        run: |
-          sudo timedatectl set-timezone ${{ env.TZ }}
-          date
-      
-      # 4. کش پکیج‌های pip
-      - name: 💾 Cache pip packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
-      # 5. کش فایل‌های مدیا (برای جلوگیری از دانلود مجدد)
-      - name: 🖼️ Cache media files
-        uses: actions/cache@v4
-        with:
-          path: media
-          key: ${{ runner.os }}-media-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-media-
-      
-      # 6. نصب وابستگی‌ها با retry
+
+      # ============================================
+      # مرحله 4: نصب وابستگی‌ها
+      # ============================================
       - name: 📦 Install dependencies
-        id: install
-        continue-on-error: false
         run: |
-          pip install --upgrade pip setuptools wheel
-          for i in 1 2 3; do
-            echo "🔧 Install attempt $i..."
-            if pip install -r requirements.txt; then
-              echo "✅ Installation successful"
-              break
-            else
-              echo "⚠️ Attempt $i failed"
-              if [ $i -eq 3 ]; then
-                echo "❌ Installation failed after 3 attempts"
-                exit 1
-              fi
-              sleep 10
-            fi
-          done
-      
-      # 7. ایجاد پوشه‌های لازم
+          pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml
+          pip list
+
+      # ============================================
+      # مرحله 5: نمایش محتوای list.txt
+      # ============================================
+      - name: 📋 Check list.txt content
+        run: |
+          echo "=========================================="
+          echo "📋 LIST.TXT CONTENT"
+          echo "=========================================="
+          if [ -f "list.txt" ]; then
+            echo "✅ list.txt exists"
+            echo "--- Raw content ---"
+            cat list.txt
+            echo "--- End of list.txt ---"
+            echo ""
+            echo "📊 Channel count: $(cat list.txt | grep -v '^#' | grep -v '^$' | wc -l) active channels"
+            echo ""
+            echo "📋 Active channels (without @):"
+            cat list.txt | grep -v '^#' | grep -v '^$' | while read line; do
+              echo "  - @${line}"
+            done
+          else
+            echo "❌ list.txt NOT FOUND!"
+            exit 1
+          fi
+          echo "=========================================="
+
+      # ============================================
+      # مرحله 6: بررسی کانال‌ها قبل از اجرا
+      # ============================================
+      - name: 🔍 Pre-check channels with Python
+        run: |
+          echo "=========================================="
+          echo "🔍 PRE-CHECK: Testing channels manually"
+          echo "=========================================="
+          
+          python3 << 'EOF'
+          import requests
+          from bs4 import BeautifulSoup
+          import time
+          
+          channels = []
+          with open('list.txt', 'r') as f:
+              for line in f:
+                  line = line.strip()
+                  if line and not line.startswith('#'):
+                      channels.append(line.replace('@', ''))
+          
+          print(f"\n📋 Testing {len(channels)} channels...\n")
+          
+          results = {'✅': [], '⚠️': [], '❌': []}
+          
+          for channel in channels:
+              try:
+                  url = f"https://t.me/s/{channel}"
+                  resp = requests.get(url, timeout=15)
+                  
+                  if resp.status_code == 200:
+                      soup = BeautifulSoup(resp.text, 'html.parser')
+                      posts = soup.select('.tgme_widget_message')
+                      first_post_id = None
+                      
+                      if posts:
+                          data_post = posts[0].get('data-post', '')
+                          if '/' in data_post:
+                              first_post_id = data_post.split('/')[-1]
+                      
+                      results['✅'].append({
+                          'channel': channel,
+                          'posts': len(posts),
+                          'latest_id': first_post_id
+                      })
+                  else:
+                      results['❌'].append({'channel': channel, 'status': resp.status_code})
+                      
+              except Exception as e:
+                  results['❌'].append({'channel': channel, 'error': str(e)[:50]})
+              
+              time.sleep(0.5)
+          
+          print("\n" + "="*50)
+          print("📊 PRE-CHECK RESULTS")
+          print("="*50)
+          
+          print(f"\n✅ VALID CHANNELS ({len(results['✅'])}):")
+          for r in results['✅']:
+              print(f"   @{r['channel']}: {r['posts']} posts (latest: {r['latest_id']})")
+          
+          print(f"\n❌ INVALID/ERROR CHANNELS ({len(results['❌'])}):")
+          for r in results['❌']:
+              if 'status' in r:
+                  print(f"   @{r['channel']}: HTTP {r['status']}")
+              else:
+                  print(f"   @{r['channel']}: {r.get('error', 'Unknown error')}")
+          
+          print("\n" + "="*50)
+          EOF
+
+      # ============================================
+      # مرحله 7: ایجاد پوشه‌ها
+      # ============================================
       - name: 📁 Create directories
         run: |
           mkdir -p media/{images,videos,audios,documents,archives,applications,code,other}
           mkdir -p website
+          mkdir -p logs
+          echo "✅ Directories created"
           ls -la media/
-      
-      # 8. اجرای اسکریپت اصلی با retry mechanism
-      - name: 🏃 Run mirror script
+
+      # ============================================
+      # مرحله 8: نمایش وضعیت فعلی posts.json
+      # ============================================
+      - name: 📊 Current posts.json status
+        run: |
+          echo "=========================================="
+          echo "📊 CURRENT POSTS.JSON STATUS"
+          echo "=========================================="
+          if [ -f "posts.json" ]; then
+            echo "✅ posts.json exists"
+            echo "Size: $(du -sh posts.json | cut -f1)"
+            echo ""
+            echo "📋 Current channels in database:"
+            python3 << 'EOF'
+            import json
+            try:
+                with open('posts.json', 'r') as f:
+                    data = json.load(f)
+                channels = data.get('channels', {})
+                print(f"Total channels: {len(channels)}")
+                for ch, posts in channels.items():
+                    print(f"  @{ch}: {len(posts)} posts")
+                    if posts:
+                        latest = max(p['id'] for p in posts)
+                        print(f"      Latest post ID: {latest}")
+            except Exception as e:
+                print(f"Error reading posts.json: {e}")
+            EOF
+          else:
+            echo "⚠️ posts.json does not exist yet"
+          echo "=========================================="
+
+      # ============================================
+      # مرحله 9: اجرای اسکریپت با خروجی کامل
+      # ============================================
+      - name: 🏃 Run mirror script (FULL DEBUG)
         id: mirror
         continue-on-error: true
         run: |
-          echo "🚀 Starting mirror script at $(date)"
+          echo "=========================================="
+          echo "🚀 STARTING MIRROR SCRIPT"
+          echo "=========================================="
+          echo "Start time: $(date)"
+          echo ""
           
-          # اجرای اسکریپت و ذخیره خروجی
-          if python mirror.py; then
+          # اجرای اسکریپت و ذخیره خروجی کامل
+          python mirror.py 2>&1 | tee mirror_full_output.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          
+          echo ""
+          echo "=========================================="
+          echo "📊 SCRIPT EXECUTION COMPLETED"
+          echo "=========================================="
+          echo "Exit code: $EXIT_CODE"
+          echo "End time: $(date)"
+          
+          if [ $EXIT_CODE -eq 0 ]; then
             echo "✅ Mirror script completed successfully"
             echo "success=true" >> $GITHUB_OUTPUT
           else
-            exit_code=$?
-            echo "❌ Mirror script failed with exit code: $exit_code"
+            echo "❌ Mirror script failed with exit code: $EXIT_CODE"
             echo "success=false" >> $GITHUB_OUTPUT
-            echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+            echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           fi
-      
-      # 9. تلاش مجدد در صورت خطا (اولین retry)
-      - name: 🔄 First retry after 30 seconds
-        if: steps.mirror.outputs.success == 'false'
-        run: |
-          echo "⚠️ First attempt failed, retrying after 30 seconds..."
-          sleep 30
           
-          if python mirror.py; then
-            echo "✅ Retry successful"
-            echo "success=true" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Retry failed"
-            echo "success=false" >> $GITHUB_OUTPUT
-          fi
-      
-      # 10. تلاش مجدد دوم (با پاکسازی کش)
-      - name: 🔄 Second retry with cache clean
-        if: steps.mirror.outputs.success == 'false'
+          # نمایش آخرین 50 خط خروجی
+          echo ""
+          echo "=========================================="
+          echo "📝 LAST 50 LINES OF OUTPUT"
+          echo "=========================================="
+          tail -50 mirror_full_output.log
+
+      # ============================================
+      # مرحله 10: بررسی خروجی اسکریپت
+      # ============================================
+      - name: 🔍 Parse script output
+        if: always()
         run: |
-          echo "⚠️ Second attempt failed, clearing cache and retrying..."
-          rm -rf ~/.cache/pip
-          pip install --no-cache-dir -r requirements.txt
-          sleep 60
+          echo "=========================================="
+          echo "🔍 ANALYZING SCRIPT OUTPUT"
+          echo "=========================================="
           
-          if python mirror.py; then
-            echo "✅ Second retry successful"
-            echo "success=true" >> $GITHUB_OUTPUT
+          if [ -f "mirror_full_output.log" ]; then
+            echo "📊 Channels processed:"
+            grep -E "بروزرسانی:|Fetching:|دریافت:" mirror_full_output.log | head -50 || echo "No channel logs found"
+            
+            echo ""
+            echo "📊 Posts found:"
+            grep -E "پست جدید|پست دریافت|posts found" mirror_full_output.log || echo "No post logs found"
+            
+            echo ""
+            echo "📊 Errors (if any):"
+            grep -E "❌|Error|خطا|failed" mirror_full_output.log | head -20 || echo "No errors found"
+            
+            echo ""
+            echo "📊 Media downloads:"
+            grep -E "دانلود|Downloading|Saved" mirror_full_output.log | head -20 || echo "No media downloads"
           else
-            echo "❌ All retries failed"
+            echo "⚠️ No output log found"
           fi
-      
-      # 11. بررسی تغییرات
+
+      # ============================================
+      # مرحله 11: بررسی تغییرات
+      # ============================================
       - name: 🔍 Check for changes
         id: changes
         run: |
+          echo "=========================================="
+          echo "🔍 CHECKING FOR CHANGES"
+          echo "=========================================="
+          
           git add posts.json media/ website/
           
+          # نمایش تغییرات
+          echo "📊 Git status:"
+          git status
+          
+          echo ""
+          echo "📊 Git diff stats:"
+          git diff --staged --stat
+          
           if git diff --staged --quiet; then
-            echo "📭 No changes detected"
+            echo ""
+            echo "📭 NO CHANGES DETECTED"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            CHANGES=$(git diff --staged --stat)
-            echo "📝 Changes detected:"
-            echo "$CHANGES"
+            echo ""
+            echo "📝 CHANGES DETECTED:"
+            git diff --staged --name-only
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
-      
-      # 12. Commit و push با retry
+          echo "=========================================="
+
+      # ============================================
+      # مرحله 12: نمایش آمار نهایی
+      # ============================================
+      - name: 📊 Final statistics
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📊 FINAL STATISTICS"
+          echo "=========================================="
+          
+          # آمار فایل‌های media
+          if [ -d "media" ]; then
+            MEDIA_COUNT=$(find media -type f 2>/dev/null | wc -l)
+            MEDIA_SIZE=$(du -sh media 2>/dev/null | cut -f1)
+            echo "📁 Media files: $MEDIA_COUNT"
+            echo "💾 Media size: $MEDIA_SIZE"
+            
+            echo ""
+            echo "📂 Media by type:"
+            for dir in images videos audios documents archives applications code other; do
+              if [ -d "media/$dir" ]; then
+                COUNT=$(find "media/$dir" -type f 2>/dev/null | wc -l)
+                if [ $COUNT -gt 0 ]; then
+                  echo "   📁 $dir: $COUNT files"
+                fi
+              fi
+            done
+          fi
+          
+          # آمار posts.json
+          if [ -f "posts.json" ]; then
+            echo ""
+            python3 << 'EOF'
+            import json
+            try:
+                with open('posts.json', 'r') as f:
+                    data = json.load(f)
+                channels = data.get('channels', {})
+                total_posts = sum(len(posts) for posts in channels.values())
+                total_media = sum(
+                    sum(len(p.get('media', [])) for p in posts)
+                    for posts in channels.values()
+                )
+                print(f"📊 Database stats:")
+                print(f"   📺 Channels: {len(channels)}")
+                print(f"   📝 Total posts: {total_posts}")
+                print(f"   🖼️ Total media: {total_media}")
+            except Exception as e:
+                print(f"Error: {e}")
+            EOF
+          fi
+          
+          echo "=========================================="
+
+      # ============================================
+      # مرحله 13: Commit و push (در صورت وجود تغییر)
+      # ============================================
       - name: 💾 Commit and push changes
         if: steps.changes.outputs.has_changes == 'true'
         run: |
@@ -193,56 +391,47 @@ jobs:
           - Updated posts from channels
           - Downloaded new media files"
           
-          # تلاش برای push با 5 بار retry
-          for i in 1 2 3 4 5; do
-            echo "📤 Push attempt $i/5..."
-            
+          for i in 1 2 3; do
+            echo "📤 Push attempt $i/3..."
             if git push origin main; then
               echo "✅ Push successful!"
               exit 0
             else
               echo "⚠️ Push attempt $i failed"
-              if [ $i -lt 5 ]; then
-                echo "🔄 Pulling latest changes and retrying..."
-                git pull --rebase origin main
+              if [ $i -lt 3 ]; then
                 sleep 5
+                git pull --rebase origin main
               fi
             fi
           done
-          
-          echo "❌ Push failed after 5 attempts"
-          exit 1
-      
-      # 13. ذخیره لاگ برای دیباگ
-      - name: 📋 Save logs
+          echo "❌ Push failed after 3 attempts"
+
+      # ============================================
+      # مرحله 14: ذخیره لاگ کامل به عنوان آرتیفکت
+      # ============================================
+      - name: 📦 Upload debug logs
         if: always()
-        run: |
-          mkdir -p logs
-          echo "Last run: $(date)" > logs/last_run.txt
-          echo "Status: ${{ steps.mirror.outputs.success }}" >> logs/last_run.txt
-          
-          # آمار فایل‌ها
-          echo "" >> logs/last_run.txt
-          echo "Media files count:" >> logs/last_run.txt
-          find media -type f | wc -l >> logs/last_run.txt
-          echo "Media total size:" >> logs/last_run.txt
-          du -sh media >> logs/last_run.txt
-      
-      # 14. آپلود آرتیفکت (برای دیباگ در صورت خطا)
-      - name: 📦 Upload logs on failure
-        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: debug-logs
+          name: debug-logs-${{ github.run_id }}
           path: |
-            logs/
+            mirror_full_output.log
             posts.json
-          retention-days: 3
-      
-      # 15. اطلاع‌رسانی (اختیاری)
-      - name: 📢 Notify on persistent failure
-        if: failure() && github.run_attempt >= 3
+            list.txt
+            logs/
+          retention-days: 7
+
+      # ============================================
+      # مرحله 15: خلاصه نهایی
+      # ============================================
+      - name: 📊 Summary
+        if: always()
         run: |
-          echo "⚠️ WARNING: Multiple update failures detected!"
-          echo "Please check the repository manually."
-          echo "Last run: $(date)"
+          echo "=========================================="
+          echo "✅ WORKFLOW COMPLETED"
+          echo "=========================================="
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Status: ${{ steps.mirror.outputs.success }}"
+          echo "Changes: ${{ steps.changes.outputs.has_changes }}"
+          echo "Logs saved as artifact: debug-logs-${{ github.run_id }}"
+          echo "=========================================="
