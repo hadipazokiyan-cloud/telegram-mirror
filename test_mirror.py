@@ -27,9 +27,17 @@ class MirrorUtilityTests(unittest.TestCase):
 
     def test_is_valid_media_url_rejects_telegram_and_non_media_urls(self):
         self.assertTrue(mirror.is_valid_media_url("https://cdn.example.com/photo.webp"))
+        self.assertFalse(mirror.is_valid_media_url("https://cdn.example.com/page.html"))
         self.assertFalse(mirror.is_valid_media_url("https://t.me/channel/123"))
+        self.assertFalse(mirror.is_valid_media_url("https://telegram.org/file.jpg"))
         self.assertFalse(mirror.is_valid_media_url("https://example.com/index.html"))
         self.assertFalse(mirror.is_valid_media_url(None))
+
+    def test_content_type_validation_rejects_html_for_media(self):
+        self.assertTrue(mirror.content_type_matches_extension("image/jpeg", ".jpg"))
+        self.assertTrue(mirror.content_type_matches_extension("application/zip", ".zip"))
+        self.assertFalse(mirror.content_type_matches_extension("text/html", ".jpg"))
+        self.assertFalse(mirror.content_type_matches_extension("application/xhtml+xml", ".zip"))
 
     def test_extract_links_from_text_deduplicates_and_classifies_links(self):
         text = (
