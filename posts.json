@@ -2,6 +2,336 @@
   "channels": {
     "vslshi": [
       {
+        "id": 9024,
+        "text": "🎲\nبدید پنجمین نفری که 5 بیاره",
+        "date": "2026-05-09T22:32:34+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9024_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9024"
+      },
+      {
+        "id": 9023,
+        "text": "https://t.me/vslshi/9021?comment=90779\nبرنده",
+        "date": "2026-05-09T22:31:37+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9023_0_5883893c.jpg"
+          },
+          {
+            "type": "image",
+            "file": "vslshi_9023_1_0e7f3228.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/vslshi/9021?comment=90779",
+            "type": "telegram",
+            "display_text": "https://t.me/vslshi/9021?comment=90779"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/vslshi/9023"
+      },
+      {
+        "id": 9021,
+        "text": "🎲\nبدید چهارمین نفری که 4 اورد",
+        "date": "2026-05-09T22:24:28+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9021_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9021"
+      },
+      {
+        "id": 9020,
+        "text": "https://t.me/vslshi/9018?comment=88448\nبرنده",
+        "date": "2026-05-09T22:24:00+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9020_0_5883893c.jpg"
+          },
+          {
+            "type": "image",
+            "file": "vslshi_9020_1_2eb5d3ba.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/vslshi/9018?comment=88448",
+            "type": "telegram",
+            "display_text": "https://t.me/vslshi/9018?comment=88448"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/vslshi/9020"
+      },
+      {
+        "id": 9018,
+        "text": "🎲\nبدید سومین نفری که 3 اورد",
+        "date": "2026-05-09T22:19:28+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9018_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9018"
+      },
+      {
+        "id": 9017,
+        "text": "https://t.me/vslshi/9015?comment=87021\nبرنده",
+        "date": "2026-05-09T22:19:18+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9017_0_5883893c.jpg"
+          },
+          {
+            "type": "image",
+            "file": "vslshi_9017_1_52968537.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/vslshi/9015?comment=87021",
+            "type": "telegram",
+            "display_text": "https://t.me/vslshi/9015?comment=87021"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/vslshi/9017"
+      },
+      {
+        "id": 9015,
+        "text": "🎲\nبدید دومین نفری که 2 اورد",
+        "date": "2026-05-09T22:15:02+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9015_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9015"
+      },
+      {
+        "id": 9014,
+        "text": "بچها کلا 5 مین صبرمیکنم جواب ندید میرم قرعه بعدی",
+        "date": "2026-05-09T22:13:43+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9014_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9014"
+      },
+      {
+        "id": 9011,
+        "text": "بالا باشید قرعه بذارم",
+        "date": "2026-05-09T22:09:03+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9011_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9011"
+      },
+      {
+        "id": 9007,
+        "text": "وصل جیگر",
+        "date": "2026-05-09T21:52:36+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9007_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9007"
+      },
+      {
+        "id": 9006,
+        "text": "وصلممممممممممممم\n🙏🏼\n😍\n😍\n😍\n😍",
+        "date": "2026-05-09T21:52:36+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9006_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9006"
+      },
+      {
+        "id": 9005,
+        "text": "وصله ممنون",
+        "date": "2026-05-09T21:51:01+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9005_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9005"
+      },
+      {
+        "id": 9004,
+        "text": "عالی بودمرسی",
+        "date": "2026-05-09T21:51:01+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9004_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9004"
+      },
+      {
+        "id": 9003,
+        "text": "وصل بود مرسی",
+        "date": "2026-05-09T21:51:01+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9003_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9003"
+      },
+      {
+        "id": 9002,
+        "text": "وصلهههههه\n😍",
+        "date": "2026-05-09T21:51:01+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9002_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9002"
+      },
+      {
+        "id": 9001,
+        "text": "وصلشدممم",
+        "date": "2026-05-09T21:51:01+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9001_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9001"
+      },
+      {
+        "id": 9000,
+        "text": "دمت گرم همه وصل میشن",
+        "date": "2026-05-09T21:51:01+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9000_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9000"
+      },
+      {
+        "id": 8999,
+        "text": "دو دیقه وصل بودم دمت گرم ای کاش بیشتر بزاری",
+        "date": "2026-05-09T21:51:00+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_8999_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/8999"
+      },
+      {
+        "id": 8998,
+        "text": "وصل شدم یک ثانیه",
+        "date": "2026-05-09T21:51:00+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_8998_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/8998"
+      },
+      {
+        "id": 8997,
+        "text": "دو دقیقه وصل میشه فقط؟",
+        "date": "2026-05-09T21:51:00+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_8997_0_5883893c.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/8997"
+      },
+      {
         "id": 8970,
         "text": "بعدی راس 1:15",
         "date": "2026-05-09T21:28:54+00:00",
@@ -1150,6 +1480,97 @@
     ],
     "Configir98": [
       {
+        "id": 8480,
+        "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
+        "date": "2026-05-09T22:15:26+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8480_0_cfd8e3d7.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/Configir98/8480"
+      },
+      {
+        "id": 8479,
+        "text": "🖤\nفروش کانفینگ مخصوص شرایط\n🇮🇷\n1 GB  درصد تخفیف ۱۰\n➡️\ntoman  300\n⚡️\nقیمت همکاری برای همکاران محترم داخل ربات شارژ شد\n⚡️\nتست بخاطر شرایط موجود نمی‌باشد درخواست نکنین\n🙏\nخرید فقط از طریق محصولات دیگر داخل بات\n❤️\n➡️\nhttps://t.me/Admin starling",
+        "date": "2026-05-09T22:05:02+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8479_0_cfd8e3d7.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/Admin",
+            "type": "telegram",
+            "display_text": "https://t.me/Admin"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/Configir98/8479"
+      },
+      {
+        "id": 8478,
+        "text": "🖤\nفروش کانفینگ مخصوص شرایط\n🇮🇷\n1 GB  درصد تخفیف ۱۰\n➡️\ntoman  300\n⚡️\nقیمت همکاری برای همکاران محترم داخل ربات شارژ شد\n⚡️\nتست بخاطر شرایط موجود نمی‌باشد درخواست نکنین\n🙏\nخرید\nفقط از طریق محصولات دیگر\nداخل بات\n❤️\n➡️\nhttps://t.me/Admin starling",
+        "date": "2026-05-09T21:55:02+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8478_0_cfd8e3d7.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/Admin",
+            "type": "telegram",
+            "display_text": "https://t.me/Admin"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/Configir98/8478"
+      },
+      {
+        "id": 8476,
+        "text": "⚡️\n𝗣𝘀𝗶𝗽𝗵𝗼𝗻 𝗣𝗿𝗼𝘅𝘆\nHost:\n92.42.207.218\nPort:\n8080\nHost:\n2.185.144.66\nPort:\n8080\nHost:\n87.247.171.14\nPort:\n8080\nHost:\n93.126.6.70\nPort:\n3128\n✅\n@Configir98",
+        "date": "2026-05-09T21:51:51+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8476_0_cfd8e3d7.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/Configir98/8476"
+      },
+      {
+        "id": 8475,
+        "text": "💥\nچالش استارز\n⭐️\nهر عزیزی که تا ساعت 1:00 روی این پست بیشترین استارز رو بزنه برنده ی یک کانفیگ اختصاصی ، پرسرعت و تضمینی از کانال میشه .\n🎁\nحجم\n🔤\n🔤\n0️⃣\n1️⃣\n، زمان نامحدود\n😐\n⚠️\nحداقل استارز لازم برای برنده شدن 450 تا\n⚠️\nممکنه رقابت بین نفرات برتر نزدیک باشه…",
+        "date": "2026-05-09T21:49:35+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8475_0_cfd8e3d7.jpg"
+          },
+          {
+            "type": "image",
+            "file": "Configir98_8475_1_daf5fcd0.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/Configir98/8475"
+      },
+      {
         "id": 8473,
         "text": "🔐\n𝗩𝟮𝗿𝗮𝘆𝗡𝗚\n➕\n𝗣𝘀𝗶𝗽𝗵𝗼𝗻\n📱\nvless://c59834b1-ec3d-4682-8580-861a400235bd@185.143.234.235:80?security=none&encryption=none&host=d.nsa03.com&type=ws#https://t.me/Configir98\n✅\n@Configir98",
         "date": "2026-05-09T21:32:57+00:00",
@@ -2189,6 +2610,96 @@
       }
     ],
     "vipV2rayNGnp": [
+      {
+        "id": 17268,
+        "text": "⚡️\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n👑\n@VIPV2rayNGNP",
+        "date": "2026-05-09T22:33:33+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17268_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17268"
+      },
+      {
+        "id": 17267,
+        "text": "⚡️\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n👑\n@VIPV2rayNGNP",
+        "date": "2026-05-09T22:10:51+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17267_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17267"
+      },
+      {
+        "id": 17266,
+        "text": "🏳\nV2rayng + Psiphon\n📱\nvless://dba2b2fd-c445-400c-ad6d-52ce505b7db6@snapp.ir:8080?path=%2F&security=none&encryption=none&host=api.shomalnojm.ir&type=ws#vipV2rayNGnp\nلینک آموزش کلیک کن\n🦋\nChannel :\n@vipV2rayNGnp",
+        "date": "2026-05-09T22:03:53+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17266_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17266"
+      },
+      {
+        "id": 17265,
+        "text": "⚡️\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n👑\n@VIPV2rayNGNP",
+        "date": "2026-05-09T22:02:55+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17265_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17265"
+      },
+      {
+        "id": 17264,
+        "text": "🏳\nV2rayng + Psiphon\n📱\nvless://c59834b1-ec3d-4682-8580-861a400235bd@185.143.234.235:80?security=none&encryption=none&host=d.nsa03.com&type=ws#vipV2rayNGnp\nلینک آموزش کلیک کن\n🦋\nChannel :\n@vipV2rayNGnp",
+        "date": "2026-05-09T21:53:56+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17264_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17264"
+      },
+      {
+        "id": 17263,
+        "text": "⚡️\n𝗣𝘀𝗶𝗽𝗵𝗼𝗻 𝗣𝗿𝗼𝘅𝘆\nHost:\n92.42.207.218\nPort:\n8080\nHost:\n2.185.144.66\nPort:\n8080\nHost:\n87.247.171.14\nPort:\n8080\nHost:\n93.126.6.70\nPort:\n3128\n@VIPV2rayNGNP",
+        "date": "2026-05-09T21:53:16+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17263_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17263"
+      },
       {
         "id": 17262,
         "text": "⚡️\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n👑\n@VIPV2rayNGNP",
@@ -4799,6 +5310,118 @@
     ],
     "IranintlTV": [
       {
+        "id": 336366,
+        "text": "نیویورک تایمز گزارش داد روسیه برای تقویت توان جمهوری اسلامی در برابر حملات آمریکا، کالاهای نظامی و تجاری از طریق دریای خزر به ایران ارسال می‌کند.\nبر اساس این گزارش، محصور بودن دریای خزر رصد تبادلات دریایی میان دو کشور را دشوار کرده است.\nگفت‌وگو با عطا حسینیان، روزنامه‌نگار\n@iranintltv",
+        "date": "2026-05-09T22:17:48+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336366_0_d09b374b.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336366_1_bbb08c99.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336366"
+      },
+      {
+        "id": 336365,
+        "text": "با گذشت بیش از دو ماه از قطع اینترنت، جمهوری اسلامی از تاریکی دیجیتال برای کاهش هزینه سرکوب و افزایش میزان خشونت استفاده می‌کند.\nهمزمان در دانشگاه‌ها نیز معترضان علاوه بر بازداشت، با محرومیت از تحصیل، اخراج و امنیتی شدن فضا روبه‌رو هستند.\nگفت‌وگو با رقیه رضایی، روزنامه‌نگار\n@iranintltv",
+        "date": "2026-05-09T22:17:20+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336365_0_d09b374b.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336365_1_95cb792f.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336365"
+      },
+      {
+        "id": 336364,
+        "text": "این روزها یک سوال مهم در میان ایرانیان مطرح است: اگر دوباره قیام کردیم و جمهوری اسلامی بار دیگر به کشتار دست زد، چه باید کرد؟ این سوال بسیار تکان‌دهنده است، اما در عین حال دغدغه‌ی بسیاری از ایرانی‌هاست. به نظر می‌رسد با توجه به نشانه‌های کنونی انباشت خشم در جامعه و حرکت به سوی شرایط پیش از قیام، پیدا کردن پاسخ درست برای این سوال یکی از مهم‌ترین دغدغه‌های امروز مردم ایران است.\n@iranintltv",
+        "date": "2026-05-09T22:14:54+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336364_0_d09b374b.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336364_1_58f15aa3.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336364"
+      },
+      {
+        "id": 336363,
+        "text": "🎧\nنسخه صوتی سیاست با مراد ویسی: سوال مهم درباره سرنگونی\n@iranintlTV",
+        "date": "2026-05-09T22:07:02+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336363_0_d09b374b.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336363"
+      },
+      {
+        "id": 336362,
+        "text": "دونالد ترامپ، رییس جمهوری ایالات متحده دو طرح گرافیکی را در تروث سوشال منتشر کرد که در آن ۱۵۹ کشتی جنگی جمهوری اسلامی در زمان بایدن و اوباما بر روی آب و در دوره او غرق شده و در زیر آب به تصویر کشیده شده‌اند.\nاو در پست دیگری پهپادهای جمهوری اسلامی را در حال سوختن نشان داده است.\nhttps://iranintl.com/202605096279",
+        "date": "2026-05-09T22:02:48+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336362_0_d09b374b.jpg"
+          },
+          {
+            "type": "image",
+            "file": "IranintlTV_336362_1_a6094e4f.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://iranintl.com/202605096279",
+            "type": "external",
+            "display_text": "https://iranintl.com/202605096279"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/IranintlTV/336362"
+      },
+      {
+        "id": 336361,
+        "text": "هم‌زمان با فراخوان شاهزاده رضا پهلوی برای حمایت از مردم ایران در پی خاموشی سراسری اینترنت، بازداشت‌های گسترده و اعدام‌های مداوم، گروهی از ایرانیان روز شنبه مقابل کاخ سفید، دفتر اتحادیه اروپا و دفتر حافظ منافع جمهوری اسلامی تجمع اعتراضی برگزار کردند.\nدر این تجمع با برزو ارجمند، هنرمند ایرانی، گفت‌وگو شد؛ او از جمله افرادی است که پیش‌تر دستور توقیف اموالش در ایران صادر شده بود.\n@iranintltv",
+        "date": "2026-05-09T21:46:39+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336361_0_d09b374b.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336361"
+      },
+      {
         "id": 336360,
         "text": "🎧\nنسخه صوتی چشم‌انداز: ترس مجتبی خامنه‌ای از شناسایی توسط اجنه موساد!\n@iranintlTV",
         "date": "2026-05-09T21:11:39+00:00",
@@ -6682,111 +7305,6 @@
           {
             "type": "image",
             "file": "IranintlTV_336193_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 336192,
-        "text": "وزارت کشور سوریه اعلام کرد «خردل احمد دیوب»، ژنرال دوران حکومت بشار اسد را به دلیل نقش مستقیم در نقض سازمان‌یافته حقوق غیرنظامیان، همکاری با جمهوری اسلامی و دست داشتن در حملات شیمیایی در دمشق بازداشت کرده است.\nدیوب متهم است که «بر عملیات سرکوب نظارت کرده و در هماهنگی لجستیکی بمباران غوطه شرقی با سلاح‌های شیمیایی ممنوعه بین‌المللی مشارکت داشته است.»\nدیوب که تازه‌ترین مقام بازداشت‌شده از میان مسئولان دوران اسد در ماه‌های اخیر است، همچنین به مشارکت در اعدام‌های فراقضایی و هماهنگی با جمهوری اسلامی و حزب‌الله لبنان، که هر دو از حکومت سرنگون‌شده حمایت می‌کردند، متهم شده است.\nدر تابستان سال ۱۳۹۲، ارتش تحت فرمان اسد متهم شد که با استفاده از سلاح‌های شیمیایی، مناطق تحت کنترل شورشیان را هدف قرار داده و بنا بر ارزیابی نهادهای اطلاعاتی آمریکا و گروه‌های حقوق بشری، بیش از ۱۴۰۰ مرد، زن و کودک را کشته است.\nhttps://iranintl.com/202605086109",
-        "date": "2026-05-08T18:57:57+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336192_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
-          }
-        ],
-        "links": [
-          {
-            "url": "https://iranintl.com/202605086109",
-            "type": "external",
-            "text": "https://iranintl.com/202605086109"
-          }
-        ],
-        "has_media": true
-      },
-      {
-        "id": 336191,
-        "text": "جنگ نمادها: چرا شکوفایی امارات برای جمهوری اسلامی غیرقابل تحمل است؟\n🖋\nکامیار بهرنگ\nدشمنی جمهوری اسلامی با امارات متحده عربی بیش از آنکه بر سر مرزها باشد، ریشه در یک تضاد عمیق وجودی دارد.\nدقیق‌ترین توصیف از این شکاف را ریم الهاشمی، وزیر مشاور امارات ارائه داد. او تاکید کرد که امارات بیش از هر کشور دیگری هدف حملات تهران بوده است، زیرا این کشور هر آن چیزی است که جمهوری اسلامی نیست. امارات با ارائه الگویی از شکوفایی اقتصادی، تنوع ادیان و همزیستی فرهنگ‌های جهانی، عملا به ضدِ الگوی حکومتی تبدیل شده که بقای خود را در انزوای ایدئولوژیک و ترویج فقر تحت نام مقاومت می‌بیند.\nهراس از ابطال روایت؛ وقتی رفاه همسایه پایه‌های شعار را می‌لرزاند\nبرای سیستمی که دهه‌ها بر طبل ساده‌زیستی انقلابی و دشمنی با تجمل کوبیده است، تماشای یک کشور مسلمان در همسایگی که به قله‌های رفاه و تکنولوژی رسیده، یک کابوس تمام‌عیار است.\nموفقیت دبی و ابوظبی به‌طور خودکار ادعای ناکارآمدی مدل‌های غیرانقلابی را باطل می‌کند. مقامات تهران توسعه امارات را نه یک پیشرفت بومی، بلکه ویترینی از استعمار نوین معرفی می‌کنند، چرا که پذیرش موفقیت این مدل به معنای پذیرش شکست چهل سال شعار اقتصاد مقاومتی در ایران است.\nاستراتژی ویرانی؛ چرا برج‌ها و هتل‌ها در سیبل حملات هستند؟\nتمرکز هواداران نظام و رسانه‌های رادیکال (اصلاح‌طلب، اصولگرا و ...) بر تهدید به تخریب هتل‌ها و برج‌های نمادین دبی، برخاسته از یک منطق جنگی است که اعتبار و امنیت را هدف می‌گیرد. آنها می‌دانند که قدرت امارات بر تصویر امنیت و ثبات استوار است.\nدر حالی که اهداف نظامی ممکن است بازسازی شوند، فروریختن یک نماد لوکس مانند برج خلیفه، ضربه‌ای مهلک به قلب صنعت توریسم و جریان سرمایه‌گذاری خارجی است. هدف قرار دادن این نمادها، تلاشی است برای اثبات این ادعا که رفاه بدون تبعیت از نظم مورد نظر تهران، سرابی لرزان بیش نیست.\nخانه شیشه‌ای؛ منطق شکنندگی در برابر منطق توسعه\nاستفاده مداوم از استعاره خانه شیشه‌ای در ادبیات نظامی و رسانه‌ای جمهوری اسلامی، پیامی روشن به ابوظبی است. بر اساس تحلیل‌های منتشر شده در رسانه‌های وابسته به نهادهای نظامی، کشوری که تمام دارایی‌اش در چند سازه مدرن خلاصه شده، در برابر ضربه پهپادی و موشکی به‌شدت آسیب‌پذیر است.\nاین استراتژی در واقع تلاش برای باج‌گیری از کشوری است که برخلاف تهران، چیزهای زیادی برای از دست دادن دارد. آنها می‌خواهند ثابت کنند که شکوفایی اقتصادی در غیاب تبعیت سیاسی از قدرت منطقه‌ای جمهوری اسلامی، به مویی بند است.\nاما ندیدن موازنه بلند مدت قدرت بزرگ‌ترین اشتباه راهبردی جمهوری اسلامی است. جایی که اتفاقا امارات متحده عربی به‌خوبی روی آن سرمایه‌گذاری کرده است و کشورش را از دل شن به جایی برای رفاه و سرمایه‌گذاری بدل کرده است.\nپیمان ابراهیم؛ تغییر موازنه و ورود اسرائیل به معادله\nتنها بخشی از این دشمنی که مستقیما به اسرائیل گره می‌خورد، نقش امارات در پیمان ابراهیم است. از نظر حاکمان جمهوری اسلامی، این توافق نه یک حرکت دیپلماتیک، بلکه یک خیانت راهبردی و تهدید موجودیتی است. الحاق امارات به این پیمان، به معنای پایان انزوای اسرائیل در منطقه و آغاز همکاری‌های امنیتی و راداری در نزدیکی سواحل ایران است. جمهوری اسلامی با وحشت نظاره‌گر این است که امارات چگونه با تغییر قطب‌نما، امنیت خود را از طریق اتحاد با قدرت‌های نوین و تکنولوژیک تامین می‌کند و عملا نفوذ سنتی ایران در میان کشورهای عربی را خنثی می‌سازد.\nاستقلال در بازار انرژی؛ پایان دوران تبعیت از الگوهای فرسوده\nتحرکات امارات برای بازنگری در سهمیه‌های اوپک یا حتی شایعات خروج از این سازمان، نشان‌دهنده تولد یک بازیگر مستقل است که دیگر حاضر نیست منافع ملی خود را فدای سیاست‌های دسته‌جمعی کند.\nاین رویکرد که ابوظبی مسیر ویژن ۲۰۳۱ خود را مقدم بر اتحادهای نفتی قدیمی می‌داند، برای تهران که تحت فشار تحریم‌ها به انسجام اوپک نیاز دارد، یک ضربه سنگین است. امارات ثابت کرده که در نظم نوین جهانی، شکوفایی اقتصادی از مسیر عمل‌گرایی می‌گذرد، نه همبستگی‌های فرسوده ایدئولوژیک.\nپایان عصر انحصار؛ پیروزی واقع‌گرایی بر شعار\nامارات با انتخاب مسیر شکوفایی و تکثر، عملا ثابت کرده است که می‌توان مسلمان بود، مدرن زیست و با تمام جهان رابطه داشت و به ثروت رسید.\nاین دقیقا همان واقعیتی است که جمهوری اسلامی بیش از چهار دهه تلاش کرده تا آن را غیرممکن جلوه دهد. دشمنی با امارات، در حقیقت دشمنی با آینه‌ای است که ناتوانی‌های حکمرانی ایدئولوژیک را به وضوح نشان می‌دهد.\n🔗\nمتن کامل گزارش را اینجا بخوانید\n@iranintltv",
-        "date": "2026-05-08T18:48:30+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336191_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 336190,
-        "text": "🎧\nنسخه صوتی حرف آخر با پوریا زراعتی - طرح موساد برای مجتبی\n@iranintlTV",
-        "date": "2026-05-08T18:44:22+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336190_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 336189,
-        "text": "۲۴ با فرداد فرحزاد\n@iranintltv",
-        "date": "2026-05-08T20:04:16.032960",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336189_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
-          },
-          {
-            "type": "file",
-            "file": "IranintlTV_336189_4.mp4",
-            "url": "https://cdn4.telesco.pe/file/59b0e428c3.mp4?token=CLtYflwoFwKXVXDmO09e4Icfhg260dML4x2VvJEhUBPxByTxT2d1IS5KcXNwqKgfJAjLMvnAJZfIlGBDK6DTmvAbfzue-zQu4Uxq1wXBck1QCRpXkDIONL2SXHnjX6HHcJPy1vV9a3btTsGM6z0qyAtirWT_rbRLJMhUK6PjEoFkjMvqVnc-YIj-Jbf8JISs6dt-WGj516j8bIsJrbggGLj8K4xEeLxEYQaVa1xdcWr0rsUFbWe_PrP9NuNGE1gY53NmnF_EPlJ7C4DCvZSlrvH0LHnW6V52_lyE_fpWjz4By6ECkQ4Xbv0Okq1jTdkU77tY-9_wyE_3m8hk-4vvVg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 336188,
-        "text": "چرا در شرایط فعلی توافق بین تهران و واشنگتن ممکن نیست؟\nترامپ و نتانیاهو برای تسلیم ج.ا چه طرحی در سر دارند؟\n@iranintltv",
-        "date": "2026-05-08T20:04:16.032420",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336188_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
-          },
-          {
-            "type": "file",
-            "file": "IranintlTV_336188_4.mp4",
-            "url": "https://cdn4.telesco.pe/file/97fff49e12.mp4?token=B7Uv12hthp8uO-S62MCX6fOkZI0Hdq8hhFqYL6qRoc16owRKyuF7q8fmAPbWFMs-BFxHpDIbffLNwsl9j89uwSJYkdLjue_W4AFEy284r94TwwgPbTqb78vhTo0U35CBdph67NioiJqYTVr1WrKxjXBm-o4pYnQySSsXGZJAsbk-osKLLBYDXs2tq6F1VWyf-ApZh_8yEAj0TQi7B69Je4WhXeK-XknXZdgqowZZjP4IltxeihXKmpm25A8t6JCMtwIMBPvSnS_2G-x5VcFLrt00DOh0-NdyLl-xFBI-a19qKqfPyaOEWt3XXY2IV0gyEQDMatahkr3cghCMwzUyqQ"
-          },
-          {
-            "type": "file",
-            "file": "IranintlTV_336188_5.mp4",
-            "url": "https://cdn4.telesco.pe/file/97fff49e12.mp4?token=B7Uv12hthp8uO-S62MCX6fOkZI0Hdq8hhFqYL6qRoc16owRKyuF7q8fmAPbWFMs-BFxHpDIbffLNwsl9j89uwSJYkdLjue_W4AFEy284r94TwwgPbTqb78vhTo0U35CBdph67NioiJqYTVr1WrKxjXBm-o4pYnQySSsXGZJAsbk-osKLLBYDXs2tq6F1VWyf-ApZh_8yEAj0TQi7B69Je4WhXeK-XknXZdgqowZZjP4IltxeihXKmpm25A8t6JCMtwIMBPvSnS_2G-x5VcFLrt00DOh0-NdyLl-xFBI-a19qKqfPyaOEWt3XXY2IV0gyEQDMatahkr3cghCMwzUyqQ"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 336187,
-        "text": "🎧\nنسخه صوتی اخبار شبانگاهی | جمعه ۱۸ اردیبهشت\n@iranintlTV",
-        "date": "2026-05-08T18:13:05+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336187_0.jpg",
             "url": "https://cdn4.telesco.pe/file/fYPR3EaF7xwnN_kpNDYvjEPPTh3RhSuspewsMhsGQv9-Ptk9ed4IBciQebnrvg3dt0eQmWokiTFRg5LIeWCMW7mTHmHlyUPRcY3fxo-316NuM0N9aXHjxzoVA43s2eUFvsUOB3mtc3uC0s0KYz8YiZAt7cs4TvlS9wL7iyK-MijquwJ_AzdqkqTbH0_8JtQqoc7Rq2hZ34cGyJyPnKaOGT2s4vKgs1IKergk_5gvKJiOKW_VMUT1Kb8JQgXfg1DigaiQO8NsxBB0Xd1MDeEzmEbSV7P4awM9Nho2uKMrL30E2KO_AnScnFhQvyG0E7FQ6t7DtILcn9anqR4ehuAIYA.jpg"
           }
         ],
@@ -9795,22 +10313,22 @@
       }
     ]
   },
-  "last_update": "2026-05-09T21:36:24.450473+00:00",
+  "last_update": "2026-05-09T22:35:30.694688+00:00",
   "last_cleanup": "2026-05-09T12:42:52.832634",
   "statistics": {
-    "total_posts": 582,
-    "total_media": 720,
-    "total_files": 720,
-    "total_links": 129,
+    "total_posts": 613,
+    "total_media": 756,
+    "total_files": 756,
+    "total_links": 134,
     "files_by_type": {
-      "image": 661,
-      "file": 12,
-      "video": 46,
+      "image": 697,
+      "file": 9,
+      "video": 49,
       "document": 1
     },
-    "referenced_files": 720,
-    "existing_media_files": 719,
-    "total_size_mb": 261.47,
-    "last_calculation": "2026-05-09T21:36:24.459124+00:00"
+    "referenced_files": 756,
+    "existing_media_files": 755,
+    "total_size_mb": 261.64,
+    "last_calculation": "2026-05-09T22:35:30.701707+00:00"
   }
 }
