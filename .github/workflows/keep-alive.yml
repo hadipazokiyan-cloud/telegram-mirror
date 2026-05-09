@@ -1,115 +1,109 @@
-name: 💚 Keep Repository Alive
+name: 💚 Repository Keep-Alive
 
 on:
   schedule:
-    # هر 6 ساعت یکبار - برای جلوگیری از خوابیدن ریپو
+    - cron: '*/30 * * * *'
     - cron: '0 */6 * * *'
-    
-    # هر روز ساعت 12 ظهر
-    - cron: '0 12 * * *'
-    
-    # هر روز ساعت 12 شب
     - cron: '0 0 * * *'
-  
-  # اجرای دستی
   workflow_dispatch:
 
-# هیچ Job اضافی برای pull request نیست
 permissions:
   contents: write
   actions: read
 
+concurrency:
+  group: repository-keep-alive
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.11'
+
 jobs:
   keep-alive:
-    name: 🫀 Keep Repository Active
+    name: Keep repository active
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    
+    timeout-minutes: 10
+
     steps:
-      - name: 📥 Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-      
-      - name: 🕐 Get current time
-        id: time
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Lightweight health check
+        id: health
+        continue-on-error: true
         run: |
-          echo "current_time=$(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
-          echo "current_date=$(date -u '+%Y-%m-%d')" >> $GITHUB_OUTPUT
-      
-      - name: 📝 Update alive timestamp
-        run: |
-          # ایجاد یا آپدیت فایل timestamp
-          echo "# 🕐 Repository Keep-Alive Status" > .alive
-          echo "" >> .alive
-          echo "Last successful check: ${{ steps.time.outputs.current_time }}" >> .alive
-          echo "Status: ✅ Active and healthy" >> .alive
-          echo "Timezone: UTC" >> .alive
-          echo "" >> .alive
-          echo "## Recent Activity" >> .alive
-          echo "- Auto-update enabled" >> .alive
-          echo "- GitHub Pages active" >> .alive
-          echo "- Media storage active" >> .alive
-      
-      - name: 🔍 Check for changes
-        id: changes
-        run: |
-          git add .alive
-          if git diff --staged --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "📭 No changes to commit"
+          mkdir -p logs media
+          python -m py_compile mirror.py || true
+          if [ -f posts.json ]; then
+            python -m json.tool posts.json >/dev/null || true
           else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "📝 Updating keep-alive timestamp"
+            printf '{"channels": {}, "last_update": null, "last_cleanup": null, "statistics": {}}\n' > posts.json
           fi
-      
-      - name: 💾 Commit and push
-        if: steps.changes.outputs.has_changes == 'true'
+          test -s list.txt || true
+
+      - name: Update heartbeat files
+        if: always()
         run: |
+          mkdir -p logs
+          NOW="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          MEDIA_COUNT="$(find media -type f ! -name '*.part' 2>/dev/null | wc -l)"
+          MEDIA_SIZE="$(du -sh media 2>/dev/null | cut -f1 || echo 0)"
+          LAST_COMMIT="$(git log -1 --format='%h - %s (%ar)' 2>/dev/null || echo 'unknown')"
+
+          cat > .alive <<EOF
+          # Telegram Mirror Heartbeat
+
+          Last check: ${NOW}
+          Repository: ${GITHUB_REPOSITORY}
+          Workflow run: ${GITHUB_RUN_ID}
+          Health check: ${{ steps.health.outcome }}
+          Media files: ${MEDIA_COUNT}
+          Media size: ${MEDIA_SIZE}
+          Last commit: ${LAST_COMMIT}
+          Status: active
+          EOF
+
+          cat > logs/heartbeat.json <<EOF
+          {
+            "last_check": "${NOW}",
+            "repository": "${GITHUB_REPOSITORY}",
+            "run_id": "${GITHUB_RUN_ID}",
+            "health": "${{ steps.health.outcome }}",
+            "media_files": ${MEDIA_COUNT},
+            "media_size": "${MEDIA_SIZE}"
+          }
+          EOF
+
+      - name: Commit heartbeat with retry
+        if: always()
+        run: |
+          set +e
+          git add .alive logs/heartbeat.json posts.json 2>/dev/null
+          if git diff --staged --quiet; then
+            echo "No heartbeat changes"
+            exit 0
+          fi
+
           git config --local user.name "keep-alive[bot]"
           git config --local user.email "keep-alive[bot]@users.noreply.github.com"
-          
-          git commit -m "💚 Keep-alive: ${{ steps.time.outputs.current_time }}"
-          
-          for i in 1 2 3; do
+          git commit -m "💚 Keep repository alive"
+
+          for attempt in 1 2 3 4 5; do
             if git push origin main; then
-              echo "✅ Keep-alive updated successfully"
-              break
-            else
-              echo "⚠️ Push attempt $i failed"
-              if [ $i -lt 3 ]; then
-                sleep 5
-                git pull --rebase origin main
-              fi
+              echo "Heartbeat pushed"
+              exit 0
             fi
+            echo "Heartbeat push failed on attempt ${attempt}; rebasing and retrying"
+            git pull --rebase --autostash origin main || true
+            sleep $((attempt * 15))
           done
-      
-      - name: 📊 Check repository health
-        run: |
-          echo "📊 Repository Health Check:"
-          echo "=========================="
-          
-          # تعداد فایل‌های media
-          if [ -d "media" ]; then
-            MEDIA_COUNT=$(find media -type f 2>/dev/null | wc -l)
-            echo "📁 Media files: $MEDIA_COUNT"
-            if [ -f "posts.json" ]; then
-              MEDIA_SIZE=$(du -sh media 2>/dev/null | cut -f1)
-              echo "💾 Media size: $MEDIA_SIZE"
-            fi
-          else
-            echo "⚠️ Media directory not found"
-          fi
-          
-          # آخرین commit
-          echo "📝 Last commit: $(git log -1 --format='%h - %s (%ar)')"
-          
-          # وضعیت GitHub Pages
-          echo "🌐 GitHub Pages: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/website/viewer-advanced.html"
-      
-      - name: 📈 Generate activity badge
-        if: success()
-        run: |
-          # ایجاد نشانگر فعالیت
-          echo "![Active](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)" > .badge.md
-          echo "Last updated: ${{ steps.time.outputs.current_time }}" >> .badge.md
+          echo "Heartbeat push failed after retries"
+          exit 0
