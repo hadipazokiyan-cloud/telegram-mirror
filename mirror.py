@@ -2,19 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Enterprise Telegram Mirror (Final Version)
-------------------------------------------
-Features:
-- Full post extraction (id, text, date)
-- Full media support (JPG, PNG, MP4, PDF, ZIP, APK, etc)
-- External link extraction (YouTube, Twitter, Instagram, Telegram, GitHub, ...)
-- Parallel download & parallel channel processing
-- Safe filename handling
-- Cache HTML pages (avoid rate-limit)
-- Atomic DB write
-- Stable retry mechanism (with exponential backoff)
-- Compatible with GitHub Actions
-- Compatible with viewer.html
+Telegram Mirror - Enterprise Grade
+===================================
+- Fully rewritten from scratch
+- Robust media detection and filtering
+- Parallel processing with intelligent queuing
+- Atomic operations with retry mechanisms
+- Clean, modular architecture
+- Production-ready for GitHub Actions
 """
 
 import os
@@ -23,262 +18,391 @@ import json
 import time
 import hashlib
 import shutil
-import requests
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse, unquote
+
+import requests
 from bs4 import BeautifulSoup
 
+# ============================================================================
+# CONFIGURATION - تنظیمات اصلی
+# ============================================================================
 
-# ============================================================
-# CONFIG
-# ============================================================
+CONFIG = {
+    # فایل‌ها و مسیرها
+    "list_file": "list.txt",
+    "db_file": "posts.json",
+    "media_dir": Path("media"),
+    "cache_dir": Path("_cache_html"),
+    
+    # محدودیت‌ها
+    "max_retries": 3,
+    "timeout": 30,
+    "max_file_size_mb": 200,
+    "max_posts_per_channel": 200,
+    "max_channels_parallel": 4,
+    "max_downloads_parallel": 6,
+    
+    # رفتارها
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "backoff_factor": 1.5,
+    "chunk_size": 256 * 1024,  # 256 KB
+}
 
-LIST_FILE = "list.txt"
-DB_FILE = "posts.json"
-MEDIA_DIR = Path("media")
-CACHE_DIR = Path("_cache_html")
+# ============================================================================
+# VALID MEDIA EXTENSIONS - پسوندهای معتبر فایل
+# ============================================================================
 
-MAX_RETRIES = 4
-REQUEST_TIMEOUT = 30
-BACKOFF_FACTOR = 1.8
+VALID_EXTENSIONS = {
+    # Images
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff',
+    # Videos
+    '.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.m4v', '.3gp', '.mpeg', '.mpg',
+    # Audio
+    '.mp3', '.ogg', '.wav', '.m4a', '.flac', '.aac', '.opus', '.wma',
+    # Documents
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.md', '.rtf',
+    '.odt', '.ods', '.odp',
+    # Archives
+    '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.tgz',
+    # Applications
+    '.apk', '.exe', '.msi', '.deb', '.rpm', '.dmg', '.bin', '.sh', '.bat',
+    # Code
+    '.py', '.js', '.html', '.css', '.java', '.cpp', '.c', '.php', '.rb', '.go',
+    '.rs', '.json', '.xml', '.yaml', '.yml',
+}
 
-MAX_FILE_SIZE_MB = 200
-MAX_POSTS_PER_CHANNEL = 200
+# ============================================================================
+# EXCLUDED URL PATTERNS - الگوهای لینک نامعتبر
+# ============================================================================
 
-DOWNLOAD_THREADS = 6
-CHANNEL_THREADS = 4
+EXCLUDED_PATTERNS = [
+    r'^https?://t\.me/',
+    r'^https?://telegram\.org/',
+    r'^https?://web\.telegram\.org/',
+    r'^https?://core\.telegram\.org/',
+    r'\.html$',
+    r'\.php$',
+    r'\?',
+]
 
-CHUNK_SIZE = 256 * 1024  # 256 KB
+# ============================================================================
+# UTILITY FUNCTIONS - توابع کمکی
+# ============================================================================
 
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/123 Safari/537.36"
-)
-
-SESSION = requests.Session()
-SESSION.headers.update({"User-Agent": USER_AGENT})
-
-
-# ============================================================
-# UTILS
-# ============================================================
-
-def log(msg: str):
-    print(f"[mirror] {msg}")
+def log(message: str, level: str = "INFO"):
+    """لاگ کردن با فرمت یکسان"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}][{level}] {message}")
 
 
 def safe_filename(name: str) -> str:
-    name = re.sub(r'[^a-zA-Z0-9._-]+', "_", name)
-    return name[:120]
+    """ایجاد نام فایل امن"""
+    # حذف کاراکترهای غیرمجاز
+    name = re.sub(r'[^\w\-_.]', '_', name)
+    # محدودیت طول
+    if len(name) > 150:
+        base, ext = os.path.splitext(name)
+        name = base[:140] + ext
+    return name
 
 
-# ============================================================
-# ATOMIC DB
-# ============================================================
-
-def load_db():
-    if not os.path.exists(DB_FILE):
-        return {"channels": {}, "last_update": None}
-
-    try:
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        shutil.copy(DB_FILE, DB_FILE + ".corrupt")
-        log("DB corrupted. Backup created.")
-        return {"channels": {}, "last_update": None}
-
-
-def save_db(db):
-    tmp = DB_FILE + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(db, f, indent=2, ensure_ascii=False)
-    os.replace(tmp, DB_FILE)
-
-
-# ============================================================
-# HTML FETCH WITH CACHE
-# ============================================================
-
-def cached_get(url: str) -> str:
-    CACHE_DIR.mkdir(exist_ok=True)
-    key = hashlib.sha1(url.encode()).hexdigest()
-    cache_path = CACHE_DIR / f"{key}.html"
-
-    if cache_path.exists():
-        return cache_path.read_text(encoding="utf-8")
-
-    for attempt in range(MAX_RETRIES):
-        try:
-            r = SESSION.get(url, timeout=REQUEST_TIMEOUT)
-            if r.status_code == 200:
-                html = r.text
-                cache_path.write_text(html, encoding="utf-8")
-                return html
-        except Exception:
-            pass
-
-        time.sleep(BACKOFF_FACTOR ** attempt)
-
-    return ""
-
-
-# ============================================================
-# LINK EXTRACTION
-# ============================================================
-
-def extract_links(text: str) -> List[Dict]:
-    if not text:
-        return []
-
-    url_pattern = r'https?://[^\s<>"\'{}|\\^`]+'
-    links = []
-
-    for match in re.finditer(url_pattern, text):
-        url = match.group()
-        lt = "external"
-
-        if "t.me" in url:
-            lt = "telegram"
-        elif "youtube.com" in url or "youtu.be" in url:
-            lt = "youtube"
-        elif "twitter.com" in url or "x.com" in url:
-            lt = "twitter"
-        elif "instagram.com" in url:
-            lt = "instagram"
-        elif "github.com" in url:
-            lt = "github"
-
-        links.append({
-            "url": url,
-            "type": lt,
-            "text": url
-        })
-
-    return links
-
-
-# ============================================================
-# MEDIA FILE DOWNLOAD
-# ============================================================
-
-def download_file(url: str, filepath: Path) -> bool:
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    tmp = filepath.with_suffix(filepath.suffix + ".part")
-
-    max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
-
-    for attempt in range(MAX_RETRIES):
-        try:
-            r = SESSION.get(url, stream=True, timeout=REQUEST_TIMEOUT)
-            if r.status_code != 200:
-                time.sleep(BACKOFF_FACTOR ** attempt)
-                continue
-
-            size = 0
-            with open(tmp, "wb") as f:
-                for chunk in r.iter_content(CHUNK_SIZE):
-                    if chunk:
-                        size += len(chunk)
-                        if size > max_bytes:
-                            tmp.unlink(missing_ok=True)
-                            return False
-                        f.write(chunk)
-
-            tmp.replace(filepath)
+def is_valid_media_url(url: str) -> bool:
+    """بررسی معتبر بودن لینک رسانه"""
+    if not url or not isinstance(url, str):
+        return False
+    
+    url_lower = url.lower().strip()
+    
+    # بررسی الگوهای نامعتبر
+    for pattern in EXCLUDED_PATTERNS:
+        if re.match(pattern, url_lower):
+            return False
+    
+    # بررسی پسوند معتبر
+    parsed = urlparse(url_lower)
+    path = unquote(parsed.path).lower()
+    
+    for ext in VALID_EXTENSIONS:
+        if path.endswith(ext):
             return True
-        except Exception:
-            time.sleep(BACKOFF_FACTOR ** attempt)
-
-    tmp.unlink(missing_ok=True)
+    
+    # بررسی در query string
+    if parsed.query:
+        for ext in VALID_EXTENSIONS:
+            if ext in parsed.query.lower():
+                return True
+    
     return False
 
 
-# ============================================================
-# PARSE TELEGRAM PAGE
-# ============================================================
-
-def get_file_ext_from_url(url: str) -> str:
-    u = url.lower()
-    if ".jpg" in u or ".jpeg" in u:
-        return ".jpg"
-    if ".png" in u:
-        return ".png"
-    if ".mp4" in u:
-        return ".mp4"
-    if ".zip" in u:
-        return ".zip"
-    if ".apk" in u:
-        return ".apk"
-    if ".pdf" in u:
-        return ".pdf"
-    return ".file"
+def get_extension_from_url(url: str) -> Optional[str]:
+    """استخراج پسوند فایل از URL"""
+    url_lower = url.lower()
+    parsed = urlparse(url_lower)
+    path = unquote(parsed.path).lower()
+    
+    for ext in VALID_EXTENSIONS:
+        if path.endswith(ext):
+            return ext
+    
+    if parsed.query:
+        for ext in VALID_EXTENSIONS:
+            if ext in parsed.query.lower():
+                return ext
+    
+    return None
 
 
-def fetch_posts(channel: str, existing_ids: Set[int]) -> List[Dict]:
+def load_channels() -> List[str]:
+    """بارگذاری لیست کانال‌ها از فایل list.txt"""
+    if not os.path.exists(CONFIG["list_file"]):
+        log(f"فایل {CONFIG['list_file']} یافت نشد", "ERROR")
+        return []
+    
+    with open(CONFIG["list_file"], "r", encoding="utf-8") as f:
+        channels = [
+            line.strip().replace('@', '')
+            for line in f
+            if line.strip() and not line.startswith('#')
+        ]
+    
+    log(f"{len(channels)} کانال بارگذاری شد: {', '.join(channels[:5])}...")
+    return channels
+
+
+def load_database() -> Dict:
+    """بارگذاری دیتابیس posts.json"""
+    db_path = Path(CONFIG["db_file"])
+    
+    if not db_path.exists():
+        log("دیتابیس جدید ایجاد می‌شود")
+        return {"channels": {}, "last_update": None}
+    
+    try:
+        with open(db_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        log(f"خطا در خواندن دیتابیس: {e}", "ERROR")
+        backup_path = db_path.with_suffix(".json.bak")
+        shutil.copy(db_path, backup_path)
+        log(f"بکاپ در {backup_path} ذخیره شد")
+        return {"channels": {}, "last_update": None}
+
+
+def save_database(db: Dict):
+    """ذخیره دیتابیس به صورت اتمیک"""
+    db["last_update"] = datetime.now().isoformat()
+    tmp_path = Path(CONFIG["db_file"] + ".tmp")
+    
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(db, f, indent=2, ensure_ascii=False)
+    
+    tmp_path.replace(CONFIG["db_file"])
+
+
+def download_file(url: str, filepath: Path) -> bool:
+    """دانلود فایل با retry و بررسی حجم"""
+    if filepath.exists() and filepath.stat().st_size > 0:
+        return True
+    
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = filepath.with_suffix(filepath.suffix + ".part")
+    max_bytes = CONFIG["max_file_size_mb"] * 1024 * 1024
+    
+    for attempt in range(CONFIG["max_retries"]):
+        try:
+            response = requests.get(
+                url, 
+                stream=True, 
+                timeout=CONFIG["timeout"],
+                headers={"User-Agent": CONFIG["user_agent"]}
+            )
+            
+            if response.status_code != 200:
+                time.sleep(CONFIG["backoff_factor"] ** attempt)
+                continue
+            
+            total = 0
+            with open(temp_path, "wb") as f:
+                for chunk in response.iter_content(CONFIG["chunk_size"]):
+                    if chunk:
+                        total += len(chunk)
+                        if total > max_bytes:
+                            log(f"فایل بزرگتر از حد مجاز: {filepath.name}", "WARNING")
+                            temp_path.unlink(missing_ok=True)
+                            return False
+                        f.write(chunk)
+            
+            temp_path.replace(filepath)
+            log(f"دانلود شد: {filepath.name}")
+            return True
+            
+        except Exception as e:
+            log(f"تلاش {attempt + 1} ناموفق برای {url[:80]}: {e}", "WARNING")
+            time.sleep(CONFIG["backoff_factor"] ** attempt)
+    
+    temp_path.unlink(missing_ok=True)
+    return False
+
+
+def extract_links_from_text(text: str) -> List[Dict]:
+    """استخراج لینک‌های خارجی از متن"""
+    if not text:
+        return []
+    
+    url_pattern = r'https?://[^\s<>"\'{}|\\^`\[\]]+'
+    links = []
+    seen = set()
+    
+    for match in re.finditer(url_pattern, text):
+        url = match.group()
+        
+        if url in seen:
+            continue
+        seen.add(url)
+        
+        # تشخیص نوع لینک
+        link_type = "external"
+        if "t.me" in url or "telegram" in url:
+            link_type = "telegram"
+        elif "youtube.com" in url or "youtu.be" in url:
+            link_type = "youtube"
+        elif "twitter.com" in url or "x.com" in url:
+            link_type = "twitter"
+        elif "instagram.com" in url:
+            link_type = "instagram"
+        elif "github.com" in url:
+            link_type = "github"
+        
+        links.append({
+            "url": url,
+            "type": link_type,
+            "text": url
+        })
+    
+    return links
+
+
+def fetch_channel_page(channel: str) -> Optional[str]:
+    """دریافت صفحه HTML کانال با کش"""
+    CONFIG["cache_dir"].mkdir(exist_ok=True)
     url = f"https://t.me/s/{channel}"
-    log(f"Fetching {channel}")
+    
+    # کش
+    cache_key = hashlib.sha1(url.encode()).hexdigest()
+    cache_path = CONFIG["cache_dir"] / f"{cache_key}.html"
+    
+    if cache_path.exists():
+        age = time.time() - cache_path.stat().st_mtime
+        if age < 3600:  # یک ساعت
+            return cache_path.read_text(encoding="utf-8")
+    
+    # دانلود
+    for attempt in range(CONFIG["max_retries"]):
+        try:
+            response = requests.get(
+                url,
+                timeout=CONFIG["timeout"],
+                headers={"User-Agent": CONFIG["user_agent"]}
+            )
+            
+            if response.status_code == 200:
+                cache_path.write_text(response.text, encoding="utf-8")
+                return response.text
+            else:
+                log(f"HTTP {response.status_code} برای {channel}", "WARNING")
+                
+        except Exception as e:
+            log(f"خطا در دریافت {channel}: {e}", "WARNING")
+        
+        time.sleep(CONFIG["backoff_factor"] ** attempt)
+    
+    return None
 
-    html = cached_get(url)
+
+def parse_posts(html: str, channel: str, existing_ids: Set[int]) -> List[Dict]:
+    """پارس کردن پست‌های HTML و استخراج اطلاعات"""
     if not html:
         return []
-
+    
     soup = BeautifulSoup(html, "lxml")
-    msgs = soup.select(".tgme_widget_message")
-
+    messages = soup.select(".tgme_widget_message")
+    
     new_posts = []
-
-    for msg in msgs:
-        data_post = msg.get("data-post")
-        if not data_post:
+    
+    for msg in messages:
+        # استخراج ID
+        data_post = msg.get("data-post", "")
+        if "/" not in data_post:
             continue
-
-        pid = data_post.split("/")[-1]
-        if not pid.isdigit():
+        
+        post_id = data_post.split("/")[-1]
+        if not post_id.isdigit():
             continue
-        pid = int(pid)
-
+        
+        pid = int(post_id)
         if pid in existing_ids:
-            continue
-
-        # text
-        txt_elem = msg.select_one(".tgme_widget_message_text")
-        text = txt_elem.get_text("\n", strip=True) if txt_elem else ""
-
-        # date
-        t = msg.select_one("time")
-        date = t.get("datetime", datetime.now().isoformat()) if t else datetime.now().isoformat()
-
-        # links
-        links = extract_links(text)
-
-        # media
+            break  # پست‌ها جدیدترین اول هستند
+        
+        # متن پست
+        text_elem = msg.select_one(".tgme_widget_message_text")
+        text = text_elem.get_text("\n", strip=True) if text_elem else ""
+        
+        # تاریخ
+        time_elem = msg.select_one("time")
+        date = time_elem.get("datetime", datetime.now().isoformat()) if time_elem else datetime.now().isoformat()
+        
+        # لینک‌های متن
+        links = extract_links_from_text(text)
+        
+        # استخراج رسانه‌ها
         media = []
-        idx = 0
-
-        # images
-        imgs = msg.select("img")
-        for img in imgs:
+        media_index = 0
+        
+        # تصاویر
+        for img in msg.select("img"):
             src = img.get("src") or img.get("data-src")
-            if src and src.startswith("http"):
-                ext = get_file_ext_from_url(src)
-                fname = safe_filename(f"{channel}_{pid}_{idx}{ext}")
-                media.append({"type": "image", "file": fname, "url": src})
-                idx += 1
-
-        # videos & documents
-        docs = msg.select("video, a[href]")
-        for d in docs:
-            url = d.get("src") or d.get("href")
-            if url and url.startswith("http") and not any(url.endswith(ext) for ext in ["?attach=1"]):
-                ext = get_file_ext_from_url(url)
-                fname = safe_filename(f"{channel}_{pid}_{idx}{ext}")
-                media.append({"type": "file", "file": fname, "url": url})
-                idx += 1
-
+            if src and is_valid_media_url(src):
+                ext = get_extension_from_url(src)
+                if ext:
+                    filename = safe_filename(f"{channel}_{pid}_{media_index}{ext}")
+                    media.append({
+                        "type": "image",
+                        "file": filename,
+                        "url": src
+                    })
+                    media_index += 1
+        
+        # ویدیوها و فایل‌ها
+        for video in msg.select("video"):
+            src = video.get("src")
+            if src and is_valid_media_url(src):
+                ext = get_extension_from_url(src) or ".mp4"
+                filename = safe_filename(f"{channel}_{pid}_{media_index}{ext}")
+                media.append({
+                    "type": "video",
+                    "file": filename,
+                    "url": src
+                })
+                media_index += 1
+        
+        # لینک‌های دانلود
+        for a in msg.select("a[href]"):
+            href = a.get("href")
+            if href and is_valid_media_url(href):
+                ext = get_extension_from_url(href) or ".file"
+                filename = safe_filename(f"{channel}_{pid}_{media_index}{ext}")
+                media.append({
+                    "type": "document",
+                    "file": filename,
+                    "url": href
+                })
+                media_index += 1
+        
         new_posts.append({
             "id": pid,
             "text": text,
@@ -286,72 +410,181 @@ def fetch_posts(channel: str, existing_ids: Set[int]) -> List[Dict]:
             "media": media,
             "links": links
         })
-
+    
     return new_posts
 
 
-# ============================================================
-# MAIN MIRROR ENGINE
-# ============================================================
+def download_post_media(post: Dict, channel: str) -> Dict:
+    """دانلود رسانه‌های یک پست"""
+    if not post.get("media"):
+        return post
+    
+    downloaded_media = []
+    
+    for media in post["media"]:
+        filepath = CONFIG["media_dir"] / media["file"]
+        
+        if download_file(media["url"], filepath):
+            downloaded_media.append({
+                "type": media["type"],
+                "file": media["file"]
+            })
+        else:
+            log(f"دانلود ناموفق: {media['url'][:80]}", "WARNING")
+    
+    post["media"] = downloaded_media
+    return post
 
-def mirror_channel(channel: str, db: dict):
-    log(f"Processing channel {channel}")
 
-    existing_ids = {p["id"] for p in db["channels"].get(channel, [])}
-    posts = fetch_posts(channel, existing_ids)
-
-    if not posts:
-        return
-
-    # download media (parallel)
-    for post in posts:
-        if not post["media"]:
-            continue
-
-        def dl(m):
-            fpath = MEDIA_DIR / m["file"]
-            return download_file(m["url"], fpath)
-
-        with ThreadPoolExecutor(max_workers=DOWNLOAD_THREADS) as pool:
-            pool.map(dl, post["media"])
-
-    # write to DB
-    db["channels"].setdefault(channel, [])
-    db["channels"][channel].extend(posts)
+def process_channel(channel: str, db: Dict) -> Dict:
+    """پردازش کامل یک کانال"""
+    log(f"شروع پردازش کانال: @{channel}")
+    
+    # IDهای موجود
+    existing_ids = {p["id"] for p in db.get("channels", {}).get(channel, [])}
+    
+    # دریافت صفحه
+    html = fetch_channel_page(channel)
+    if not html:
+        log(f"دریافت صفحه برای @{channel} ناموفق", "ERROR")
+        return db
+    
+    # پارس پست‌های جدید
+    new_posts = parse_posts(html, channel, existing_ids)
+    
+    if not new_posts:
+        log(f"پست جدیدی برای @{channel} یافت نشد")
+        return db
+    
+    log(f"{len(new_posts)} پست جدید برای @{channel} یافت شد")
+    
+    # دانلود رسانه‌ها با موازی
+    with ThreadPoolExecutor(max_workers=CONFIG["max_downloads_parallel"]) as executor:
+        futures = {executor.submit(download_post_media, post, channel): post for post in new_posts}
+        
+        for future in as_completed(futures):
+            try:
+                completed_post = future.result()
+                # به‌روزرسانی در لیست اصلی
+                for i, p in enumerate(new_posts):
+                    if p["id"] == completed_post["id"]:
+                        new_posts[i] = completed_post
+                        break
+            except Exception as e:
+                log(f"خطا در دانلود رسانه: {e}", "ERROR")
+    
+    # اضافه کردن به دیتابیس
+    if channel not in db["channels"]:
+        db["channels"][channel] = []
+    
+    db["channels"][channel].extend(new_posts)
+    
+    # مرتب‌سازی و محدودیت
     db["channels"][channel].sort(key=lambda x: x["id"], reverse=True)
-    db["channels"][channel] = db["channels"][channel][:MAX_POSTS_PER_CHANNEL]
+    if len(db["channels"][channel]) > CONFIG["max_posts_per_channel"]:
+        db["channels"][channel] = db["channels"][channel][:CONFIG["max_posts_per_channel"]]
+    
+    log(f"کانال @{channel} به‌روز شد. مجموع پست‌ها: {len(db['channels'][channel])}")
+    return db
 
 
-# ============================================================
-# ENTRY POINT
-# ============================================================
+def clean_invalid_media_files():
+    """پاکسازی فایل‌های نامعتبر از پوشه media"""
+    media_dir = CONFIG["media_dir"]
+    if not media_dir.exists():
+        return
+    
+    removed = 0
+    for file in media_dir.rglob("*"):
+        if file.is_file():
+            # حذف فایل‌های .part
+            if file.suffix == ".part":
+                file.unlink()
+                removed += 1
+                continue
+            
+            # حذف فایل‌های HTML اشتباه
+            if file.suffix == ".html" or file.suffix == ".file":
+                content = file.read_bytes()[:500]
+                if b"<!DOCTYPE html" in content or b"<html" in content:
+                    file.unlink()
+                    removed += 1
+                    log(f"حذف فایل نامعتبر: {file.name}", "WARNING")
+    
+    if removed > 0:
+        log(f"{removed} فایل نامعتبر حذف شد")
+
+
+def print_statistics(db: Dict):
+    """نمایش آمار نهایی"""
+    channels = db.get("channels", {})
+    total_posts = sum(len(posts) for posts in channels.values())
+    total_media = 0
+    total_links = 0
+    
+    for posts in channels.values():
+        for post in posts:
+            total_media += len(post.get("media", []))
+            total_links += len(post.get("links", []))
+    
+    log("=" * 50)
+    log("آمار نهایی:")
+    log(f"  کانال‌ها: {len(channels)}")
+    log(f"  پست‌ها: {total_posts}")
+    log(f"  رسانه‌ها: {total_media}")
+    log(f"  لینک‌ها: {total_links}")
+    
+    if CONFIG["media_dir"].exists():
+        media_count = sum(1 for _ in CONFIG["media_dir"].rglob("*") if _.is_file())
+        log(f"  فایل‌های رسانه: {media_count}")
+    
+    log("=" * 50)
+
 
 def main():
-    MEDIA_DIR.mkdir(exist_ok=True)
-
-    if not os.path.exists(LIST_FILE):
-        log("list.txt not found")
+    """تابع اصلی"""
+    start_time = time.time()
+    
+    log("=" * 50)
+    log("Telegram Mirror - Enterprise Edition")
+    log("=" * 50)
+    
+    # ایجاد پوشه‌ها
+    CONFIG["media_dir"].mkdir(exist_ok=True)
+    CONFIG["cache_dir"].mkdir(exist_ok=True)
+    
+    # پاکسازی فایل‌های نامعتبر
+    clean_invalid_media_files()
+    
+    # بارگذاری کانال‌ها
+    channels = load_channels()
+    if not channels:
+        log("هیچ کانالی برای پردازش وجود ندارد", "ERROR")
         return
-
-    channels = [
-        c.strip() for c in open(LIST_FILE, "r", encoding="utf-8")
-        if c.strip() and not c.startswith("#")
-    ]
-
-    db = load_db()
-
-    with ThreadPoolExecutor(max_workers=CHANNEL_THREADS) as pool:
-        futures = {pool.submit(mirror_channel, ch, db): ch for ch in channels}
-        for f in as_completed(futures):
+    
+    # بارگذاری دیتابیس
+    db = load_database()
+    
+    # پردازش موازی کانال‌ها
+    with ThreadPoolExecutor(max_workers=CONFIG["max_channels_parallel"]) as executor:
+        futures = {executor.submit(process_channel, channel, db): channel for channel in channels}
+        
+        for future in as_completed(futures):
+            channel = futures[future]
             try:
-                f.result()
+                db = future.result()
             except Exception as e:
-                log(f"Channel {futures[f]} failed: {e}")
-
-    db["last_update"] = datetime.now().isoformat()
-    save_db(db)
-
-    log("All channels done.")
+                log(f"خطا در پردازش کانال {channel}: {e}", "ERROR")
+    
+    # ذخیره دیتابیس
+    save_database(db)
+    
+    # نمایش آمار
+    print_statistics(db)
+    
+    elapsed = time.time() - start_time
+    log(f"زمان اجرا: {elapsed:.2f} ثانیه")
+    log("پایان کار")
 
 
 if __name__ == "__main__":
