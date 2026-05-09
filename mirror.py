@@ -1,1015 +1,987 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Mirror public Telegram channel posts into posts.json and media/.
 
-import os
-import re
-import json
-import time
-import random
-import shutil
+The script intentionally uses only Telegram's public web pages
+(https://t.me/s/<channel>). It does not need a bot token, API ID, or a
+Telegram account, which makes it suitable for scheduled GitHub Actions runs.
+"""
+
+from __future__ import annotations
+
+import argparse
 import hashlib
+import json
 import logging
 import mimetypes
-from pathlib import Path
-from datetime import datetime, timedelta
-from typing import List, Dict, Set, Optional, Tuple, Any
+import os
+import random
+import re
+import shutil
+import sys
+import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from urllib.parse import urlparse, unquote
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Set
+from urllib.parse import unquote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# ============================================================================
-# VALID EXTENSIONS - پسوندهای معتبر فایل
-# ============================================================================
 
+# File extensions that are safe and useful to archive from public posts.
 VALID_EXTENSIONS = {
-    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.heic',
-    '.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.m4v', '.3gp', '.mpeg', '.mpg', '.wmv',
-    '.mp3', '.ogg', '.wav', '.m4a', '.flac', '.aac', '.opus', '.wma', '.aiff',
-    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.md', '.rtf',
-    '.odt', '.ods', '.odp', '.csv',
-    '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.tgz', '.tbz2',
-    '.apk', '.exe', '.msi', '.deb', '.rpm', '.appimage', '.dmg', '.bin', '.sh', '.bat',
-    '.py', '.js', '.html', '.css', '.java', '.cpp', '.c', '.php', '.rb', '.go',
-    '.rs', '.json', '.xml', '.yaml', '.yml', '.toml',
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".tiff", ".heic",
+    ".mp4", ".webm", ".mov", ".avi", ".mkv", ".flv", ".m4v", ".3gp", ".mpeg", ".mpg", ".wmv",
+    ".mp3", ".ogg", ".wav", ".m4a", ".flac", ".aac", ".opus", ".wma", ".aiff",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md", ".rtf",
+    ".odt", ".ods", ".odp", ".csv",
+    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".tgz", ".tbz2",
+    ".apk", ".exe", ".msi", ".deb", ".rpm", ".appimage", ".dmg", ".bin",
+    ".py", ".js", ".html", ".css", ".json", ".xml", ".yaml", ".yml", ".toml",
 }
-
-# ============================================================================
-# EXCLUDED PATTERNS - الگوهای لینک نامعتبر
-# ============================================================================
 
 EXCLUDED_PATTERNS = [
-    r'^https?://t\.me/',
-    r'^https?://telegram\.org/',
-    r'^https?://web\.telegram\.org/',
-    r'^https?://core\.telegram\.org/',
-    r'^https?://telegram\.dog/',
-    r'\.html$', r'\.php$', r'\.asp$', r'\.aspx$',
-    r'#', r'\?tgme', r'\?embed',
+    r"^https?://t\.me/",
+    r"^https?://telegram\.org/",
+    r"^https?://web\.telegram\.org/",
+    r"^https?://core\.telegram\.org/",
+    r"^https?://telegram\.dog/",
+    r"#",
+    r"\?tgme",
+    r"\?embed",
 ]
-
-# ============================================================================
-# ROTATING USER AGENTS - لیست User-Agent های مختلف
-# ============================================================================
 
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
 ]
 
-# ============================================================================
-# CONFIGURATION - تنظیمات کامل با رفتارهای انسانی
-# ============================================================================
 
-CONFIG = {
-    # ------------------------------------------------------------------------
-    # فایل‌ها و مسیرها
-    # ------------------------------------------------------------------------
+@dataclass(frozen=True)
+class Settings:
+    """Runtime settings loaded from environment variables."""
+
+    list_file: Path
+    db_file: Path
+    media_dir: Path
+    cache_dir: Path
+    logs_dir: Path
+    backup_dir: Path
+    post_limit: int
+    keep_posts: int
+    max_file_mb: int
+    max_total_mb: int
+    timeout: int
+    retries: int
+    delay_min: float
+    delay_max: float
+    channels_parallel: int
+    downloads_parallel: int
+    cache_ttl_seconds: int
+    max_post_age_hours: int
+    cleanup_old_posts: bool
+    cleanup_orphans: bool
+    download_media: bool
+    randomize_channels: bool
+    user_agent: str
+
+
+def _env_str(name: str, default: str) -> str:
+    return os.environ.get(name, default).strip() or default
+
+
+def _env_int(name: str, default: int, minimum: int = 0) -> int:
+    try:
+        return max(minimum, int(_env_str(name, str(default))))
+    except ValueError:
+        return default
+
+
+def _env_float(name: str, default: float, minimum: float = 0.0) -> float:
+    try:
+        return max(minimum, float(_env_str(name, str(default))))
+    except ValueError:
+        return default
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = _env_str(name, "1" if default else "0").lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def load_settings() -> Settings:
+    return Settings(
+        list_file=Path(_env_str("TELEGRAM_MIRROR_LIST", "list.txt")),
+        db_file=Path(_env_str("TELEGRAM_MIRROR_DB", "posts.json")),
+        media_dir=Path(_env_str("TELEGRAM_MIRROR_MEDIA_DIR", "media")),
+        cache_dir=Path(_env_str("TELEGRAM_MIRROR_CACHE_DIR", "_cache_html")),
+        logs_dir=Path(_env_str("TELEGRAM_MIRROR_LOG_DIR", "logs")),
+        backup_dir=Path(_env_str("TELEGRAM_MIRROR_BACKUP_DIR", "backups")),
+        post_limit=_env_int("TELEGRAM_MIRROR_POST_LIMIT", 30, 1),
+        keep_posts=_env_int("TELEGRAM_MIRROR_KEEP_POSTS", 100, 1),
+        max_file_mb=_env_int("TELEGRAM_MIRROR_MAX_FILE_MB", 100, 1),
+        max_total_mb=_env_int("TELEGRAM_MIRROR_MAX_TOTAL_MB", 500, 1),
+        timeout=_env_int("TELEGRAM_MIRROR_TIMEOUT", 45, 1),
+        retries=_env_int("TELEGRAM_MIRROR_RETRIES", 3, 1),
+        delay_min=_env_float("TELEGRAM_MIRROR_DELAY_MIN", 1.0, 0.0),
+        delay_max=_env_float("TELEGRAM_MIRROR_DELAY_MAX", 4.0, 0.0),
+        channels_parallel=_env_int("TELEGRAM_MIRROR_CHANNEL_WORKERS", 1, 1),
+        downloads_parallel=_env_int("TELEGRAM_MIRROR_DOWNLOAD_WORKERS", 3, 1),
+        cache_ttl_seconds=_env_int("TELEGRAM_MIRROR_CACHE_TTL", 3600, 0),
+        max_post_age_hours=_env_int("TELEGRAM_MIRROR_MAX_AGE_HOURS", 0, 0),
+        cleanup_old_posts=_env_bool("TELEGRAM_MIRROR_CLEANUP_OLD", False),
+        cleanup_orphans=_env_bool("TELEGRAM_MIRROR_CLEANUP_ORPHANS", True),
+        download_media=_env_bool("TELEGRAM_MIRROR_DOWNLOAD_MEDIA", True),
+        randomize_channels=_env_bool("TELEGRAM_MIRROR_RANDOMIZE_CHANNELS", False),
+        user_agent=_env_str("TELEGRAM_MIRROR_USER_AGENT", USER_AGENTS[0]),
+    )
+
+
+SETTINGS = load_settings()
+
+# CONFIG keeps backwards-compatible names for tests and small local overrides.
+CONFIG: Dict[str, Dict[str, Any]] = {
     "paths": {
-        "list_file": "list.txt",
-        "db_file": "posts.json",
-        "media_dir": Path("media"),
-        "cache_dir": Path("_cache_html"),
-        "logs_dir": Path("logs"),
-        "backup_dir": Path("backups"),
+        "list_file": str(SETTINGS.list_file),
+        "db_file": str(SETTINGS.db_file),
+        "media_dir": SETTINGS.media_dir,
+        "cache_dir": SETTINGS.cache_dir,
+        "logs_dir": SETTINGS.logs_dir,
+        "backup_dir": SETTINGS.backup_dir,
     },
-    
-    # ------------------------------------------------------------------------
-    # محدودیت‌های زمانی - حذف پست‌های قدیمی
-    # ------------------------------------------------------------------------
     "time": {
-        "max_post_age_hours": 48,      # حذف پست‌های قدیمی‌تر از 48 ساعت
-        "cleanup_interval_hours": 6,   # بررسی پاکسازی هر 6 ساعت
-        "cache_ttl_hours": 2,           # اعتبار کش HTML (2 ساعت)
+        "max_post_age_hours": SETTINGS.max_post_age_hours,
+        "cleanup_interval_hours": 6,
+        "cache_ttl_hours": SETTINGS.cache_ttl_seconds / 3600,
     },
-    
-    # ------------------------------------------------------------------------
-    # محدودیت‌ها
-    # ------------------------------------------------------------------------
     "limits": {
-        "max_retries": 3,               # کاهش برای طبیعی‌تر بودن
-        "timeout": 30,
-        "max_file_size_mb": 200,
-        "max_total_size_mb": 1000,
-        "max_posts_per_channel": 200,
-        "max_channels_parallel": 2,     # کاهش برای کمتر دیده شدن
-        "max_downloads_parallel": 3,    # کاهش برای طبیعی‌تر بودن
+        "max_retries": SETTINGS.retries,
+        "timeout": SETTINGS.timeout,
+        "max_file_size_mb": SETTINGS.max_file_mb,
+        "max_total_size_mb": SETTINGS.max_total_mb,
+        "max_posts_per_channel": SETTINGS.keep_posts,
+        "max_channels_parallel": SETTINGS.channels_parallel,
+        "max_downloads_parallel": SETTINGS.downloads_parallel,
         "max_links_per_post": 30,
         "max_media_per_post": 20,
+        "post_limit": SETTINGS.post_limit,
     },
-    
-    # ------------------------------------------------------------------------
-    # رفتارهای شبکه - شبیه‌سازی انسان
-    # ------------------------------------------------------------------------
     "network": {
         "use_rotating_user_agents": True,
-        "min_delay_between_requests": 2.0,   # حداقل تأخیر بین درخواست‌ها
-        "max_delay_between_requests": 5.0,   # حداکثر تأخیر بین درخواست‌ها
-        "min_delay_between_channels": 3.0,   # تأخیر بین کانال‌ها
-        "max_delay_between_channels": 8.0,   # تأخیر بین کانال‌ها
-        "jitter_factor": 0.3,                # نویز تصادفی در تأخیرها
-        
-        "retry": {
-            "backoff_base": 2.0,
-            "max_backoff": 30,
-            "retry_status_codes": [429, 500, 502, 503, 504],
-            "retry_exceptions": ["Timeout", "ConnectionError"],
-        },
-        
-        "cache": {
-            "enabled": True,
-            "ttl_seconds": 7200,  # 2 ساعت
-            "max_size_mb": 200,
-        },
-        
-        "download": {
-            "chunk_size": 128 * 1024,      # کاهش برای طبیعی‌تر بودن
-            "min_chunk": 32 * 1024,
-            "max_chunk": 512 * 1024,
-            "adaptive_chunking": True,
-            "resume": True,
-        },
+        "min_delay_between_requests": SETTINGS.delay_min,
+        "max_delay_between_requests": SETTINGS.delay_max,
+        "retry": {"backoff_base": 2.0, "max_backoff": 60, "retry_status_codes": [429, 500, 502, 503, 504]},
+        "cache": {"enabled": SETTINGS.cache_ttl_seconds > 0, "ttl_seconds": SETTINGS.cache_ttl_seconds},
+        "download": {"chunk_size": 128 * 1024, "resume": True},
     },
-    
-    # ------------------------------------------------------------------------
-    # رفتارهای پردازش
-    # ------------------------------------------------------------------------
     "processing": {
         "max_text_length": 10000,
-        "organize_media_by_type": True,
+        "organize_media_by_type": False,
         "extract_links": True,
-        "keep_original_filenames": True,
-        "remove_duplicate_media": True,
-        "skip_old_posts": True,            # اسکیپ پست‌های قدیمی
+        "skip_old_posts": SETTINGS.max_post_age_hours > 0,
+        "download_media": SETTINGS.download_media,
     },
-    
-    # ------------------------------------------------------------------------
-    # پاکسازی خودکار - حذف پست‌های قدیمی
-    # ------------------------------------------------------------------------
     "cleanup": {
-        "auto_cleanup": True,
-        "remove_old_posts": True,           # حذف پست‌های قدیمی از دیتابیس
-        "remove_orphaned_files": True,      # حذف فایل‌های بدون مرجع
-        "max_total_size_mb": 1000,
-        "backup_before_cleanup": True,      # بکاپ قبل از پاکسازی
+        "remove_old_posts": SETTINGS.cleanup_old_posts,
+        "remove_orphaned_files": SETTINGS.cleanup_orphans,
+        "backup_before_cleanup": True,
     },
-    
-    # ------------------------------------------------------------------------
-    # بهینه‌سازی و امنیت
-    # ------------------------------------------------------------------------
-    "optimization": {
-        "enable_cache": True,
-        "adaptive_delay": True,
-        "randomize_request_order": True,    # تصادفی کردن ترتیب درخواست‌ها
-        "batch_size": 20,
-    },
+    "optimization": {"randomize_request_order": SETTINGS.randomize_channels},
 }
 
-# ============================================================================
-# LOGGING SETUP
-# ============================================================================
 
-def setup_logging():
-    logs_dir = CONFIG["paths"]["logs_dir"]
-    logs_dir.mkdir(exist_ok=True)
-    
-    log_file = logs_dir / f"mirror_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-    
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(asctime)s][%(levelname)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[
-            logging.FileHandler(log_file, encoding='utf-8'),
-            logging.StreamHandler()
-        ]
-    )
-    
-    return logging.getLogger("Mirror")
+logger = logging.getLogger("telegram_mirror")
 
-logger = setup_logging()
 
-# ============================================================================
-# SESSION WITH RETRY - نشست با قابلیت Retry
-# ============================================================================
+def setup_logging() -> logging.Logger:
+    """Configure console and file logging once."""
+    if logger.handlers:
+        return logger
+
+    logs_dir = Path(CONFIG["paths"]["logs_dir"])
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log_file = logs_dir / f"mirror_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.log"
+
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S")
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    return logger
+
 
 def create_session() -> requests.Session:
-    """ایجاد نشست با retry strategy و تنظیمات ضد تشخیص"""
+    """Create a requests session with retry support for GitHub Actions."""
     session = requests.Session()
-    
-    # Retry strategy
     retry_strategy = Retry(
         total=CONFIG["limits"]["max_retries"],
+        connect=CONFIG["limits"]["max_retries"],
+        read=CONFIG["limits"]["max_retries"],
         backoff_factor=CONFIG["network"]["retry"]["backoff_base"],
         status_forcelist=CONFIG["network"]["retry"]["retry_status_codes"],
-        allowed_methods=["GET", "HEAD"],
+        allowed_methods={"GET", "HEAD"},
+        respect_retry_after_header=True,
     )
-    
-    adapter = HTTPAdapter(max_retries=retry_strategy)
+    adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=10)
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-    
-    # Headers شبیه انسان
     session.headers.update({
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9,fa;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent": SETTINGS.user_agent,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.8,fa;q=0.7",
         "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Cache-Control": "max-age=0",
     })
-    
     return session
+
 
 SESSION = create_session()
 
-# ============================================================================
-# ANTI-DETECTION UTILITIES - توابع ضد تشخیص
-# ============================================================================
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
 
 def get_random_user_agent() -> str:
-    """دریافت User-Agent تصادفی"""
-    if CONFIG["network"]["use_rotating_user_agents"]:
+    if CONFIG["network"].get("use_rotating_user_agents", True):
         return random.choice(USER_AGENTS)
-    return USER_AGENTS[0]
+    return SETTINGS.user_agent
 
 
 def get_human_like_delay() -> float:
-    """محاسبه تأخیر شبیه انسان (با نویز تصادفی)"""
-    min_delay = CONFIG["network"]["min_delay_between_requests"]
-    max_delay = CONFIG["network"]["max_delay_between_requests"]
-    jitter = CONFIG["network"]["jitter_factor"]
-    
-    base_delay = random.uniform(min_delay, max_delay)
-    noise = random.uniform(-base_delay * jitter, base_delay * jitter)
-    
-    return max(0.5, base_delay + noise)
+    low = float(CONFIG["network"].get("min_delay_between_requests", 0.0))
+    high = float(CONFIG["network"].get("max_delay_between_requests", low))
+    if high < low:
+        high = low
+    return random.uniform(low, high) if high > 0 else 0.0
 
 
 def get_channel_delay() -> float:
-    """تأخیر بین پردازش کانال‌ها"""
-    min_delay = CONFIG["network"]["min_delay_between_channels"]
-    max_delay = CONFIG["network"]["max_delay_between_channels"]
-    return random.uniform(min_delay, max_delay)
+    return get_human_like_delay()
 
 
-def randomize_request_order(items: List) -> List:
-    """تصادفی کردن ترتیب درخواست‌ها"""
-    if CONFIG["optimization"]["randomize_request_order"]:
+def randomize_request_order(items: List[Any]) -> List[Any]:
+    """Return a shuffled copy only when randomization is enabled."""
+    if CONFIG["optimization"].get("randomize_request_order"):
         shuffled = items.copy()
         random.shuffle(shuffled)
         return shuffled
     return items
 
 
-def is_post_within_age_limit(post_date_str: str) -> bool:
-    """بررسی اینکه پست در 48 ساعت گذشته منتشر شده باشد"""
-    if not CONFIG["processing"]["skip_old_posts"]:
-        return True
-    
+def parse_datetime(value: str) -> Optional[datetime]:
+    """Parse common Telegram datetime formats into timezone-aware UTC."""
+    if not value:
+        return None
+    cleaned = value.strip().replace("Z", "+00:00")
     try:
-        # پشتیبانی از فرمت‌های مختلف تاریخ
-        if '+' in post_date_str:
-            post_date_str = post_date_str.split('+')[0]
-        if 'T' in post_date_str:
-            post_date_str = post_date_str.replace('T', ' ')
-        if len(post_date_str) > 19:
-            post_date_str = post_date_str[:19]
-        
-        post_date = datetime.fromisoformat(post_date_str)
-        age_hours = (datetime.now() - post_date).total_seconds() / 3600
-        
-        return age_hours <= CONFIG["time"]["max_post_age_hours"]
-    except Exception as e:
-        logger.debug(f"خطا در解析 تاریخ: {e}")
-        return True  # در صورت خطا، نگه دار
+        parsed = datetime.fromisoformat(cleaned)
+    except ValueError:
+        try:
+            parsed = datetime.strptime(cleaned[:19], "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            try:
+                parsed = datetime.strptime(cleaned[:19], "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
-# ============================================================================
-# UTILITY FUNCTIONS
-# ============================================================================
+def is_post_within_age_limit(post_date_str: str) -> bool:
+    """Return False when age filtering is enabled and the post is too old."""
+    if not CONFIG["processing"].get("skip_old_posts"):
+        return True
+    max_age_hours = int(CONFIG["time"].get("max_post_age_hours", 0))
+    if max_age_hours <= 0:
+        return True
+    post_date = parse_datetime(post_date_str)
+    if post_date is None:
+        return True
+    return utc_now() - post_date <= timedelta(hours=max_age_hours)
+
 
 def safe_filename(name: str) -> str:
-    """ایجاد نام فایل امن"""
-    name = re.sub(r'[^\w\-_.]', '_', name)
+    """Create a portable filename while preserving the extension."""
+    name = unquote(str(name)).strip() or "file"
+    name = re.sub(r"[^A-Za-z0-9_\-\.]", "_", name)
+    name = re.sub(r"_+", "_", name).strip("._") or "file"
     if len(name) > 200:
         base, ext = os.path.splitext(name)
-        name = base[:180] + ext
+        name = base[: max(1, 200 - len(ext))] + ext
     return name
 
 
 def get_extension_from_url(url: str) -> Optional[str]:
-    """استخراج پسوند فایل از URL"""
-    url_lower = url.lower()
-    parsed = urlparse(url_lower)
+    """Find a known file extension in the URL path or query string."""
+    if not url:
+        return None
+    parsed = urlparse(url.lower())
     path = unquote(parsed.path).lower()
-    
-    for ext in VALID_EXTENSIONS:
-        if path.endswith(ext):
+    suffix = Path(path).suffix
+    if suffix in VALID_EXTENSIONS:
+        return suffix
+    query = unquote(parsed.query).lower()
+    for ext in sorted(VALID_EXTENSIONS, key=len, reverse=True):
+        if re.search(re.escape(ext) + r"(?:$|[&=/?#])", query):
             return ext
-    
-    if parsed.query:
-        for ext in VALID_EXTENSIONS:
-            if ext in parsed.query.lower():
-                return ext
-    
     return None
 
 
 def is_valid_media_url(url: str) -> bool:
-    """بررسی معتبر بودن لینک رسانه"""
+    """Return True for downloadable media/document URLs only."""
     if not url or not isinstance(url, str):
         return False
-    
-    url_lower = url.lower().strip()
-    
-    for pattern in EXCLUDED_PATTERNS:
-        if re.match(pattern, url_lower):
-            return False
-    
-    return get_extension_from_url(url) is not None
+    normalized = url.strip().lower()
+    if not normalized.startswith(("http://", "https://", "//")):
+        return False
+    if normalized.startswith("//"):
+        normalized = "https:" + normalized
+    if any(re.search(pattern, normalized) for pattern in EXCLUDED_PATTERNS):
+        return False
+    return get_extension_from_url(normalized) is not None
 
 
-# ============================================================================
-# FILE AND DATABASE OPERATIONS
-# ============================================================================
+def classify_media(ext: str, default: str = "document") -> str:
+    ext = ext.lower()
+    if ext in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".tiff", ".heic"}:
+        return "image"
+    if ext in {".mp4", ".webm", ".mov", ".avi", ".mkv", ".flv", ".m4v", ".3gp", ".mpeg", ".mpg", ".wmv"}:
+        return "video"
+    if ext in {".mp3", ".ogg", ".wav", ".m4a", ".flac", ".aac", ".opus", ".wma", ".aiff"}:
+        return "audio"
+    return default
+
+
+def normalize_channel_name(value: str) -> Optional[str]:
+    """Normalize @channel, t.me/channel, or raw channel names."""
+    value = value.strip()
+    if not value or value.startswith("#"):
+        return None
+    value = value.split("#", 1)[0].strip()
+    value = re.sub(r"^https?://t\.me/s/", "", value, flags=re.I)
+    value = re.sub(r"^https?://t\.me/", "", value, flags=re.I)
+    value = value.strip("/@ ")
+    if not re.fullmatch(r"[A-Za-z0-9_]{4,64}", value):
+        logger.warning("Skipping invalid channel name: %s", value)
+        return None
+    return value
+
 
 def load_channels() -> List[str]:
-    """بارگذاری لیست کانال‌ها"""
-    list_file = CONFIG["paths"]["list_file"]
-    
-    if not os.path.exists(list_file):
-        logger.error(f"فایل {list_file} یافت نشد")
+    """Load public channel names from list.txt."""
+    list_file = Path(CONFIG["paths"]["list_file"])
+    if not list_file.exists():
+        logger.error("Channel list not found: %s", list_file)
         return []
-    
-    with open(list_file, "r", encoding="utf-8") as f:
-        channels = [
-            line.strip().replace('@', '')
-            for line in f
-            if line.strip() and not line.startswith('#')
-        ]
-    
-    # تصادفی کردن ترتیب کانال‌ها
+
+    channels: List[str] = []
+    seen = set()
+    for line in list_file.read_text(encoding="utf-8").splitlines():
+        channel = normalize_channel_name(line)
+        if channel and channel.lower() not in seen:
+            channels.append(channel)
+            seen.add(channel.lower())
+
     channels = randomize_request_order(channels)
-    
-    logger.info(f"{len(channels)} کانال بارگذاری شد")
+    logger.info("Loaded %d channel(s)", len(channels))
     return channels
 
 
-def load_database() -> Dict:
-    """بارگذاری دیتابیس"""
-    db_file = CONFIG["paths"]["db_file"]
-    
-    if not os.path.exists(db_file):
-        logger.info("ایجاد دیتابیس جدید")
-        return {"channels": {}, "last_update": None, "last_cleanup": None, "statistics": {}}
-    
+def empty_database() -> Dict[str, Any]:
+    return {"channels": {}, "last_update": None, "last_cleanup": None, "statistics": {}}
+
+
+def load_database() -> Dict[str, Any]:
+    """Read posts.json and recover safely if it is missing or invalid."""
+    db_file = Path(CONFIG["paths"]["db_file"])
+    if not db_file.exists():
+        return empty_database()
     try:
-        with open(db_file, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"خطا در خواندن دیتابیس: {e}")
-        backup_file = CONFIG["paths"]["backup_dir"] / f"posts_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        CONFIG["paths"]["backup_dir"].mkdir(exist_ok=True)
-        shutil.copy(db_file, backup_file)
-        logger.info(f"بکاپ ایجاد شد: {backup_file}")
-        return {"channels": {}, "last_update": None, "last_cleanup": None, "statistics": {}}
+        with db_file.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception as exc:
+        backup_dir = Path(CONFIG["paths"]["backup_dir"])
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        backup_file = backup_dir / f"posts_broken_{utc_now().strftime('%Y%m%d_%H%M%S')}.json"
+        shutil.copy2(db_file, backup_file)
+        logger.error("Could not read %s (%s). Broken copy saved to %s", db_file, exc, backup_file)
+        return empty_database()
+
+    if not isinstance(data, dict):
+        return empty_database()
+    data.setdefault("channels", {})
+    data.setdefault("last_update", None)
+    data.setdefault("last_cleanup", None)
+    data.setdefault("statistics", {})
+    if not isinstance(data["channels"], dict):
+        data["channels"] = {}
+    return data
 
 
-def save_database(db: Dict):
-    """ذخیره دیتابیس به صورت اتمیک"""
-    db["last_update"] = datetime.now().isoformat()
-    
-    # به‌روزرسانی آمار
+def calculate_statistics(db: Dict[str, Any]) -> Dict[str, Any]:
     total_posts = 0
     total_media = 0
     total_links = 0
-    
-    for channel, posts in db.get("channels", {}).items():
+    files_by_type: Dict[str, int] = {}
+    used_files: Set[str] = set()
+
+    for posts in db.get("channels", {}).values():
+        if not isinstance(posts, list):
+            continue
         total_posts += len(posts)
         for post in posts:
-            total_media += len(post.get("media", []))
-            total_links += len(post.get("links", []))
-    
-    db["statistics"] = {
+            media_items = post.get("media", []) if isinstance(post, dict) else []
+            link_items = post.get("links", []) if isinstance(post, dict) else []
+            total_media += len(media_items)
+            total_links += len(link_items)
+            for media in media_items:
+                media_type = media.get("type", "document")
+                files_by_type[media_type] = files_by_type.get(media_type, 0) + 1
+                if media.get("file"):
+                    used_files.add(media["file"])
+
+    media_dir = Path(CONFIG["paths"]["media_dir"])
+    total_size = 0
+    existing_files = 0
+    if media_dir.exists():
+        for file_path in media_dir.rglob("*"):
+            if file_path.is_file() and file_path.suffix != ".part":
+                existing_files += 1
+                total_size += file_path.stat().st_size
+
+    return {
         "total_posts": total_posts,
         "total_media": total_media,
+        "total_files": total_media,
         "total_links": total_links,
-        "last_calculation": datetime.now().isoformat()
+        "files_by_type": files_by_type,
+        "referenced_files": len(used_files),
+        "existing_media_files": existing_files,
+        "total_size_mb": round(total_size / (1024 * 1024), 2),
+        "last_calculation": utc_now().isoformat(),
     }
-    
-    db_file = CONFIG["paths"]["db_file"]
-    tmp_file = f"{db_file}.tmp"
-    
-    with open(tmp_file, "w", encoding="utf-8") as f:
-        json.dump(db, f, indent=2, ensure_ascii=False)
-    
-    os.replace(tmp_file, db_file)
 
 
-# ============================================================================
-# NETWORK OPERATIONS WITH ANTI-DETECTION
-# ============================================================================
+def save_database(db: Dict[str, Any]) -> None:
+    """Write posts.json atomically to avoid corrupt files on CI interruption."""
+    db["last_update"] = utc_now().isoformat()
+    db["statistics"] = calculate_statistics(db)
+
+    db_file = Path(CONFIG["paths"]["db_file"])
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=str(db_file.parent or Path(".")), delete=False) as fh:
+        json.dump(db, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+        tmp_name = fh.name
+    os.replace(tmp_name, db_file)
+
+
+def cache_path_for(url: str) -> Path:
+    cache_dir = Path(CONFIG["paths"]["cache_dir"])
+    key = hashlib.sha1(url.encode("utf-8")).hexdigest()
+    return cache_dir / f"{key}.html"
+
 
 def fetch_html(url: str, use_cache: bool = True) -> Optional[str]:
-    """دریافت HTML با تأخیر تصادفی و User-Agent مختلف"""
-    
-    # تأخیر شبیه انسان
-    time.sleep(get_human_like_delay())
-    
-    if use_cache and CONFIG["network"]["cache"]["enabled"]:
-        cache_dir = CONFIG["paths"]["cache_dir"]
-        cache_dir.mkdir(exist_ok=True)
-        
-        cache_key = hashlib.sha1(url.encode()).hexdigest()
-        cache_path = cache_dir / f"{cache_key}.html"
-        
-        if cache_path.exists():
-            age = time.time() - cache_path.stat().st_mtime
-            if age < CONFIG["network"]["cache"]["ttl_seconds"]:
-                logger.debug(f"کش استفاده شد: {url[:60]}...")
-                return cache_path.read_text(encoding="utf-8")
-    
-    # تغییر User-Agent برای هر درخواست
-    current_ua = get_random_user_agent()
-    SESSION.headers.update({"User-Agent": current_ua})
-    
-    for attempt in range(CONFIG["limits"]["max_retries"]):
+    """Fetch a page with cache, retries, and bounded delays."""
+    cache_enabled = bool(CONFIG["network"]["cache"].get("enabled"))
+    ttl = int(CONFIG["network"]["cache"].get("ttl_seconds", 0))
+    cache_path = cache_path_for(url)
+
+    if use_cache and cache_enabled and cache_path.exists():
+        age = time.time() - cache_path.stat().st_mtime
+        if age <= ttl:
+            return cache_path.read_text(encoding="utf-8", errors="replace")
+
+    delay = get_human_like_delay()
+    if delay:
+        time.sleep(delay)
+
+    last_error: Optional[Exception] = None
+    for attempt in range(1, int(CONFIG["limits"]["max_retries"]) + 1):
         try:
-            response = SESSION.get(url, timeout=CONFIG["limits"]["timeout"])
-            
+            SESSION.headers.update({"User-Agent": get_random_user_agent()})
+            response = SESSION.get(url, timeout=int(CONFIG["limits"]["timeout"]))
             if response.status_code == 200:
                 html = response.text
-                
-                if use_cache and CONFIG["network"]["cache"]["enabled"]:
+                if use_cache and cache_enabled:
+                    cache_path.parent.mkdir(parents=True, exist_ok=True)
                     cache_path.write_text(html, encoding="utf-8")
-                
                 return html
-            elif response.status_code == 429:
-                logger.warning("Rate limit detected, waiting longer...")
-                time.sleep(CONFIG["network"]["retry"]["max_backoff"])
-            else:
-                logger.warning(f"HTTP {response.status_code} برای {url[:60]}...")
-                
-        except Exception as e:
-            logger.warning(f"تلاش {attempt + 1} ناموفق: {e}")
-        
-        delay = min(CONFIG["network"]["retry"]["max_backoff"], 
-                    CONFIG["network"]["retry"]["backoff_base"] ** attempt)
-        time.sleep(delay)
-    
-    logger.error(f"دریافت صفحه ناموفق: {url}")
+            logger.warning("HTTP %s for %s", response.status_code, url)
+        except Exception as exc:
+            last_error = exc
+            logger.warning("Fetch attempt %d failed for %s: %s", attempt, url, exc)
+        if attempt < int(CONFIG["limits"]["max_retries"]):
+            time.sleep(min(60, 2 ** attempt))
+
+    logger.error("Failed to fetch %s%s", url, f": {last_error}" if last_error else "")
     return None
 
 
+def content_length_too_large(response: requests.Response) -> bool:
+    length = response.headers.get("Content-Length")
+    if not length or not length.isdigit():
+        return False
+    return int(length) > int(CONFIG["limits"]["max_file_size_mb"]) * 1024 * 1024
+
+
 def download_file(url: str, filepath: Path) -> bool:
-    """دانلود فایل با تأخیر شبیه انسان"""
-    
+    """Download a file using a .part file and atomic rename."""
     if filepath.exists() and filepath.stat().st_size > 0:
-        logger.debug(f"فایل موجود است: {filepath.name}")
         return True
-    
-    # تأخیر قبل از دانلود
-    time.sleep(random.uniform(0.5, 1.5))
-    
+    if not CONFIG["processing"].get("download_media", True):
+        return False
+
     filepath.parent.mkdir(parents=True, exist_ok=True)
     temp_path = filepath.with_suffix(filepath.suffix + ".part")
-    
-    max_bytes = CONFIG["limits"]["max_file_size_mb"] * 1024 * 1024
-    
-    for attempt in range(CONFIG["limits"]["max_retries"]):
+    max_bytes = int(CONFIG["limits"]["max_file_size_mb"]) * 1024 * 1024
+
+    for attempt in range(1, int(CONFIG["limits"]["max_retries"]) + 1):
         try:
-            current_ua = get_random_user_agent()
-            headers = {"User-Agent": current_ua}
-            
-            if CONFIG["network"]["download"]["resume"] and temp_path.exists():
-                existing_size = temp_path.stat().st_size
+            existing_size = temp_path.stat().st_size if temp_path.exists() else 0
+            headers = {"User-Agent": get_random_user_agent()}
+            if existing_size and CONFIG["network"]["download"].get("resume", True):
                 headers["Range"] = f"bytes={existing_size}-"
-            else:
-                existing_size = 0
-            
-            response = SESSION.get(url, headers=headers, stream=True, 
-                                   timeout=CONFIG["limits"]["timeout"])
-            
-            if response.status_code not in (200, 206):
-                delay = min(CONFIG["network"]["retry"]["max_backoff"], 
-                           CONFIG["network"]["retry"]["backoff_base"] ** attempt)
-                time.sleep(delay)
-                continue
-            
-            chunk_size = CONFIG["network"]["download"]["chunk_size"]
-            total = existing_size
-            
-            mode = "ab" if existing_size > 0 else "wb"
-            with open(temp_path, mode) as f:
-                for chunk in response.iter_content(chunk_size):
-                    if chunk:
+
+            with SESSION.get(url, headers=headers, stream=True, timeout=int(CONFIG["limits"]["timeout"])) as response:
+                if response.status_code not in {200, 206}:
+                    logger.warning("Download HTTP %s for %s", response.status_code, url)
+                    continue
+                if content_length_too_large(response):
+                    logger.warning("Skipping oversized file by Content-Length: %s", url)
+                    temp_path.unlink(missing_ok=True)
+                    return False
+
+                mode = "ab" if existing_size and response.status_code == 206 else "wb"
+                total = existing_size if mode == "ab" else 0
+                with temp_path.open(mode + "") as fh:
+                    for chunk in response.iter_content(int(CONFIG["network"]["download"]["chunk_size"])):
+                        if not chunk:
+                            continue
                         total += len(chunk)
                         if total > max_bytes:
-                            logger.warning(f"فایل بزرگتر از حد مجاز: {filepath.name}")
+                            logger.warning("Skipping oversized file: %s", url)
                             temp_path.unlink(missing_ok=True)
                             return False
-                        f.write(chunk)
-            
-            temp_path.replace(filepath)
-            logger.info(f"دانلود شد: {filepath.name} ({total / 1024 / 1024:.2f} MB)")
-            return True
-            
-        except Exception as e:
-            logger.warning(f"تلاش {attempt + 1} برای {filepath.name}: {e}")
-            delay = min(CONFIG["network"]["retry"]["max_backoff"], 
-                       CONFIG["network"]["retry"]["backoff_base"] ** attempt)
-            time.sleep(delay)
-    
+                        fh.write(chunk)
+
+            if temp_path.exists() and temp_path.stat().st_size > 0:
+                temp_path.replace(filepath)
+                logger.info("Downloaded %s", filepath.name)
+                return True
+        except Exception as exc:
+            logger.warning("Download attempt %d failed for %s: %s", attempt, url, exc)
+        if attempt < int(CONFIG["limits"]["max_retries"]):
+            time.sleep(min(60, 2 ** attempt))
+
     temp_path.unlink(missing_ok=True)
-    logger.error(f"دانلود ناموفق: {url[:100]}")
     return False
 
 
-# ============================================================================
-# LINK EXTRACTION
-# ============================================================================
-
-def extract_links_from_text(text: str) -> List[Dict]:
-    """استخراج لینک‌های خارجی از متن"""
-    if not text or not CONFIG["processing"]["extract_links"]:
+def extract_links_from_text(text: str) -> List[Dict[str, str]]:
+    """Extract unique links from post text and classify common services."""
+    if not text or not CONFIG["processing"].get("extract_links", True):
         return []
-    
-    url_pattern = r'https?://[^\s<>"\'{}|\\^`\[\]]+'
-    links = []
+    url_pattern = r"https?://[^\s<>\"'{}|\\^`\[\]]+"
+    links: List[Dict[str, str]] = []
     seen = set()
-    
     for match in re.finditer(url_pattern, text):
-        url = match.group()
-        
+        url = match.group().rstrip(".,؛،!?)]}")
         if url in seen:
             continue
         seen.add(url)
-        
+        host = urlparse(url).netloc.lower()
         link_type = "external"
-        if "t.me" in url:
+        if host.endswith("t.me"):
             link_type = "telegram"
-        elif "youtube.com" in url or "youtu.be" in url:
+        elif "youtube.com" in host or "youtu.be" in host:
             link_type = "youtube"
-        elif "twitter.com" in url or "x.com" in url:
+        elif host in {"twitter.com", "x.com"} or host.endswith(".twitter.com") or host.endswith(".x.com"):
             link_type = "twitter"
-        elif "instagram.com" in url:
+        elif "instagram.com" in host:
             link_type = "instagram"
-        elif "github.com" in url:
+        elif "github.com" in host:
             link_type = "github"
-        
-        links.append({
-            "url": url,
-            "type": link_type,
-            "display_text": url[:60] + "..." if len(url) > 60 else url
-        })
-        
-        if len(links) >= CONFIG["limits"]["max_links_per_post"]:
+        links.append({"url": url, "type": link_type, "display_text": url[:60] + "..." if len(url) > 60 else url})
+        if len(links) >= int(CONFIG["limits"]["max_links_per_post"]):
             break
-    
     return links
 
 
-# ============================================================================
-# MEDIA EXTRACTION
-# ============================================================================
+def media_filename(channel: str, post_id: int, index: int, url: str, ext: str) -> str:
+    digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:8]
+    return safe_filename(f"{channel}_{post_id}_{index}_{digest}{ext}")
 
-def extract_media_from_post(msg_element, channel: str, post_id: int) -> List[Dict]:
-    """استخراج رسانه‌های یک پست"""
-    media = []
-    media_index = 0
-    
-    # تصاویر
+
+def absolute_url(url: str) -> str:
+    if url.startswith("//"):
+        return "https:" + url
+    return urljoin("https://t.me", url)
+
+
+def extract_media_from_post(msg_element: Any, channel: str, post_id: int) -> List[Dict[str, str]]:
+    """Extract media links from Telegram message HTML."""
+    media: List[Dict[str, str]] = []
+    seen_urls: Set[str] = set()
+
+    def add_candidate(raw_url: Optional[str], forced_type: Optional[str] = None) -> None:
+        if not raw_url or len(media) >= int(CONFIG["limits"]["max_media_per_post"]):
+            return
+        url = absolute_url(raw_url.strip())
+        if url in seen_urls or not is_valid_media_url(url):
+            return
+        ext = get_extension_from_url(url) or mimetypes.guess_extension(mimetypes.guess_type(url)[0] or "") or ".bin"
+        media_type = forced_type or classify_media(ext)
+        filename = media_filename(channel, post_id, len(media), url, ext)
+        media.append({"type": media_type, "file": filename, "url": url})
+        seen_urls.add(url)
+
     for img in msg_element.select("img"):
-        src = img.get("src") or img.get("data-src")
-        if src and is_valid_media_url(src):
-            ext = get_extension_from_url(src) or ".jpg"
-            filename = safe_filename(f"{channel}_{post_id}_{media_index}{ext}")
-            media.append({"type": "image", "file": filename, "url": src})
-            media_index += 1
-    
-    # ویدیوها
+        add_candidate(img.get("src") or img.get("data-src"), "image")
+
     for video in msg_element.select("video"):
-        src = video.get("src")
-        if src and is_valid_media_url(src):
-            ext = get_extension_from_url(src) or ".mp4"
-            filename = safe_filename(f"{channel}_{post_id}_{media_index}{ext}")
-            media.append({"type": "video", "file": filename, "url": src})
-            media_index += 1
-    
-    # فایل‌ها و اسناد
-    for a in msg_element.select("a[href]"):
-        href = a.get("href")
-        if href and is_valid_media_url(href):
-            ext = get_extension_from_url(href) or ".file"
-            filename = safe_filename(f"{channel}_{post_id}_{media_index}{ext}")
-            
-            media_type = "document"
-            if ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                media_type = "image"
-            elif ext in ['.mp4', '.webm', '.mov']:
-                media_type = "video"
-            elif ext in ['.mp3', '.ogg', '.wav']:
-                media_type = "audio"
-            
-            media.append({"type": media_type, "file": filename, "url": href})
-            media_index += 1
-        
-        if media_index >= CONFIG["limits"]["max_media_per_post"]:
-            break
-    
+        add_candidate(video.get("src"), "video")
+        for source in video.select("source[src]"):
+            add_candidate(source.get("src"), "video")
+
+    for audio in msg_element.select("audio"):
+        add_candidate(audio.get("src"), "audio")
+        for source in audio.select("source[src]"):
+            add_candidate(source.get("src"), "audio")
+
+    for link in msg_element.select("a[href]"):
+        add_candidate(link.get("href"))
+
+    # Telegram sometimes exposes image URLs in inline background styles.
+    for styled in msg_element.select("[style]"):
+        style = styled.get("style") or ""
+        for match in re.finditer(r"url\(['\"]?([^)'\"]+)", style):
+            add_candidate(match.group(1), "image")
+
     return media
 
 
-# ============================================================================
-# POST PARSING WITH TIME FILTER
-# ============================================================================
-
-def parse_posts(html: str, channel: str, existing_ids: Set[int]) -> List[Dict]:
-    """پارس کردن پست‌های HTML با فیلتر سنی"""
+def parse_posts(html: str, channel: str, existing_ids: Set[int]) -> List[Dict[str, Any]]:
+    """Parse Telegram public channel HTML into post dictionaries."""
     if not html:
         return []
-    
     soup = BeautifulSoup(html, "lxml")
     messages = soup.select(".tgme_widget_message")
-    
-    new_posts = []
-    skipped_old = 0
-    
-    for msg in messages:
+    posts: List[Dict[str, Any]] = []
+
+    for msg in messages[: int(CONFIG["limits"].get("post_limit", 30))]:
         data_post = msg.get("data-post", "")
         if "/" not in data_post:
             continue
-        
-        post_id_str = data_post.split("/")[-1]
-        if not post_id_str.isdigit():
+        post_id_text = data_post.rsplit("/", 1)[-1]
+        if not post_id_text.isdigit():
             continue
-        
-        post_id = int(post_id_str)
-        
+        post_id = int(post_id_text)
         if post_id in existing_ids:
-            break
-        
-        # تاریخ پست
-        time_elem = msg.select_one("time")
-        date = time_elem.get("datetime", datetime.now().isoformat()) if time_elem else datetime.now().isoformat()
-        
-        # بررسی سن پست - حذف پست‌های قدیمی‌تر از 48 ساعت
-        if not is_post_within_age_limit(date):
-            skipped_old += 1
-            logger.debug(f"پست {post_id} رد شد (قدیمی‌تر از {CONFIG['time']['max_post_age_hours']} ساعت)")
             continue
-        
-        # متن پست
+
+        time_elem = msg.select_one("time[datetime]")
+        date = time_elem.get("datetime") if time_elem else utc_now().isoformat()
+        if not is_post_within_age_limit(date):
+            continue
+
         text_elem = msg.select_one(".tgme_widget_message_text")
         text = text_elem.get_text("\n", strip=True) if text_elem else ""
-        
-        if len(text) > CONFIG["processing"]["max_text_length"]:
-            text = text[:CONFIG["processing"]["max_text_length"]] + "..."
-        
-        # لینک‌ها و رسانه‌ها
-        links = extract_links_from_text(text)
+        max_text = int(CONFIG["processing"].get("max_text_length", 10000))
+        if len(text) > max_text:
+            text = text[:max_text] + "..."
+
         media = extract_media_from_post(msg, channel, post_id)
-        
-        new_posts.append({
+        links = extract_links_from_text(text)
+        posts.append({
             "id": post_id,
             "text": text,
             "date": date,
             "media": media,
-            "links": links
+            "links": links,
+            "has_media": bool(media),
+            "has_links": bool(links),
+            "source": f"https://t.me/{channel}/{post_id}",
         })
-        
-        logger.debug(f"پست {post_id} پذیرفته شد: {len(media)} رسانه, {len(links)} لینک")
-    
-    if skipped_old > 0:
-        logger.info(f"{skipped_old} پست قدیمی از @{channel} رد شد")
-    
-    return new_posts
+
+    posts.sort(key=lambda item: item["id"], reverse=True)
+    return posts
 
 
-# ============================================================================
-# CHANNEL PROCESSING
-# ============================================================================
-
-def download_post_media(post: Dict, channel: str) -> Dict:
-    """دانلود رسانه‌های یک پست"""
-    if not post.get("media"):
+def download_post_media(post: Dict[str, Any], channel: str) -> Dict[str, Any]:
+    """Download all media for one post and keep only successful files."""
+    if not post.get("media") or not CONFIG["processing"].get("download_media", True):
         return post
-    
-    downloaded_media = []
-    media_dir = CONFIG["paths"]["media_dir"]
-    
-    for media in post["media"]:
-        if CONFIG["processing"]["organize_media_by_type"]:
-            type_dir = media_dir / media["type"]
-            type_dir.mkdir(exist_ok=True)
-            filepath = type_dir / media["file"]
+
+    media_dir = Path(CONFIG["paths"]["media_dir"])
+    downloaded: List[Dict[str, str]] = []
+    for media in post.get("media", []):
+        media_type = media.get("type", "document")
+        if CONFIG["processing"].get("organize_media_by_type", False):
+            filepath = media_dir / media_type / media["file"]
+            stored_name = str(Path(media_type) / media["file"])
         else:
             filepath = media_dir / media["file"]
-        
-        if download_file(media["url"], filepath):
-            downloaded_media.append({
-                "type": media["type"],
-                "file": str(filepath.relative_to(media_dir)) if CONFIG["processing"]["organize_media_by_type"] else media["file"]
-            })
-        else:
-            logger.warning(f"دانلود ناموفق: {media['url'][:80]}")
-    
-    post["media"] = downloaded_media
+            stored_name = media["file"]
+        if download_file(media.get("url", ""), filepath):
+            downloaded.append({"type": media_type, "file": stored_name})
+    post["media"] = downloaded
+    post["has_media"] = bool(downloaded)
     return post
 
 
-def process_channel(channel: str, db: Dict) -> Dict:
-    """پردازش کامل یک کانال"""
-    logger.info(f"🔄 شروع پردازش کانال: @{channel}")
-    
-    existing_ids = {p["id"] for p in db.get("channels", {}).get(channel, [])}
-    
-    url = f"https://t.me/s/{channel}"
-    html = fetch_html(url)
-    
+def merge_posts(existing: List[Dict[str, Any]], new_posts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Merge posts by ID, newest first, respecting the keep limit."""
+    merged: Dict[int, Dict[str, Any]] = {}
+    for post in existing + new_posts:
+        try:
+            merged[int(post["id"])] = post
+        except Exception:
+            continue
+    posts = sorted(merged.values(), key=lambda item: int(item.get("id", 0)), reverse=True)
+    return posts[: int(CONFIG["limits"]["max_posts_per_channel"])]
+
+
+def process_channel(channel: str, db: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Fetch, parse, and download one channel. The caller merges results."""
+    logger.info("Processing @%s", channel)
+    existing = db.get("channels", {}).get(channel, [])
+    existing_ids = {int(post.get("id")) for post in existing if isinstance(post, dict) and str(post.get("id", "")).isdigit()}
+    html = fetch_html(f"https://t.me/s/{channel}")
     if not html:
-        logger.error(f"❌ دریافت صفحه برای @{channel} ناموفق")
-        return db
-    
+        return []
+
     new_posts = parse_posts(html, channel, existing_ids)
-    
     if not new_posts:
-        logger.info(f"📭 پست جدیدی برای @{channel} یافت نشد")
-        return db
-    
-    logger.info(f"📝 {len(new_posts)} پست جدید برای @{channel} یافت شد")
-    
-    # دانلود رسانه‌ها
-    with ThreadPoolExecutor(max_workers=CONFIG["limits"]["max_downloads_parallel"]) as executor:
-        futures = {executor.submit(download_post_media, post, channel): post for post in new_posts}
-        
-        for future in as_completed(futures):
-            try:
-                completed_post = future.result()
-                for i, p in enumerate(new_posts):
-                    if p["id"] == completed_post["id"]:
-                        new_posts[i] = completed_post
-                        break
-            except Exception as e:
-                logger.error(f"خطا در دانلود رسانه: {e}")
-    
-    # اضافه کردن به دیتابیس
-    if channel not in db["channels"]:
-        db["channels"][channel] = []
-    
-    db["channels"][channel].extend(new_posts)
-    
-    # مرتب‌سازی و محدودیت
-    db["channels"][channel].sort(key=lambda x: x["id"], reverse=True)
-    if len(db["channels"][channel]) > CONFIG["limits"]["max_posts_per_channel"]:
-        removed = len(db["channels"][channel]) - CONFIG["limits"]["max_posts_per_channel"]
-        db["channels"][channel] = db["channels"][channel][:CONFIG["limits"]["max_posts_per_channel"]]
-        logger.debug(f"{removed} پست قدیمی از @{channel} حذف شد")
-    
-    logger.info(f"✅ کانال @{channel} به‌روز شد. مجموع پست‌ها: {len(db['channels'][channel])}")
-    
-    # تأخیر بین کانال‌ها
-    time.sleep(get_channel_delay())
-    
-    return db
+        logger.info("No new posts for @%s", channel)
+        return []
+
+    logger.info("Found %d new post(s) for @%s", len(new_posts), channel)
+    if CONFIG["processing"].get("download_media", True):
+        with ThreadPoolExecutor(max_workers=int(CONFIG["limits"]["max_downloads_parallel"])) as executor:
+            futures = [executor.submit(download_post_media, post, channel) for post in new_posts]
+            new_posts = [future.result() for future in as_completed(futures)]
+    return new_posts
 
 
-# ============================================================================
-# CLEANUP OLD POSTS - حذف پست‌های قدیمی
-# ============================================================================
-
-def cleanup_old_posts(db: Dict) -> Dict:
-    """حذف پست‌های قدیمی‌تر از 48 ساعت از دیتابیس"""
-    if not CONFIG["cleanup"]["remove_old_posts"]:
-        return db
-    
-    logger.info("🧹 شروع پاکسازی پست‌های قدیمی...")
-    
-    removed_posts = 0
-    removed_media = 0
-    cutoff_time = datetime.now() - timedelta(hours=CONFIG["time"]["max_post_age_hours"])
-    
-    for channel, posts in db.get("channels", {}).items():
-        original_count = len(posts)
-        kept_posts = []
-        
-        for post in posts:
-            try:
-                post_date_str = post.get("date", "")
-                if '+' in post_date_str:
-                    post_date_str = post_date_str.split('+')[0]
-                if 'T' in post_date_str:
-                    post_date_str = post_date_str.replace('T', ' ')
-                if len(post_date_str) > 19:
-                    post_date_str = post_date_str[:19]
-                
-                post_date = datetime.fromisoformat(post_date_str)
-                
-                if post_date >= cutoff_time:
-                    kept_posts.append(post)
-                else:
-                    removed_posts += 1
-                    removed_media += len(post.get("media", []))
-                    
-                    # حذف فایل‌های رسانه
-                    for media in post.get("media", []):
-                        media_path = CONFIG["paths"]["media_dir"] / media["file"]
-                        if media_path.exists():
-                            media_path.unlink()
-                            
-            except Exception as e:
-                logger.debug(f"خطا در تاریخ پست {post.get('id')}: {e}")
-                kept_posts.append(post)  # در صورت خطا، نگه دار
-        
-        db["channels"][channel] = kept_posts
-        
-        if original_count != len(kept_posts):
-            logger.info(f"کانال @{channel}: {original_count - len(kept_posts)} پست قدیمی حذف شد")
-    
-    # حذف کانال‌های خالی
-    empty_channels = [ch for ch, posts in db["channels"].items() if not posts]
-    for ch in empty_channels:
-        del db["channels"][ch]
-        logger.info(f"کانال خالی حذف شد: @{ch}")
-    
-    logger.info(f"✅ پاکسازی کامل: {removed_posts} پست و {removed_media} فایل حذف شد")
-    
-    return db
-
-
-def cleanup_orphaned_files(db: Dict):
-    """پاکسازی فایل‌های یتیم"""
-    if not CONFIG["cleanup"]["remove_orphaned_files"]:
-        return
-    
-    logger.info("🧹 پاکسازی فایل‌های یتیم...")
-    
-    media_dir = CONFIG["paths"]["media_dir"]
-    if not media_dir.exists():
-        return
-    
-    used_files = set()
-    for channel, posts in db.get("channels", {}).items():
+def media_files_referenced_by(db: Dict[str, Any]) -> Set[str]:
+    used = set()
+    for posts in db.get("channels", {}).values():
         for post in posts:
             for media in post.get("media", []):
-                used_files.add(media["file"])
-    
-    removed = 0
-    for file in media_dir.rglob("*"):
-        if file.is_file() and file.suffix != ".part":
-            rel_path = str(file.relative_to(media_dir))
-            if rel_path not in used_files:
-                file.unlink()
-                removed += 1
-                logger.debug(f"حذف فایل یتیم: {rel_path}")
-    
-    if removed > 0:
-        logger.info(f"🗑️ {removed} فایل یتیم حذف شد")
-    else:
-        logger.info("✅ هیچ فایل یتیمی یافت نشد")
+                if media.get("file"):
+                    used.add(str(media["file"]))
+    return used
 
 
-def backup_database(db: Dict):
-    """بکاپ گرفتن از دیتابیس قبل از پاکسازی"""
-    if not CONFIG["cleanup"]["backup_before_cleanup"]:
+def cleanup_orphaned_files(db: Dict[str, Any]) -> None:
+    """Remove files in media/ that are not referenced by posts.json."""
+    if not CONFIG["cleanup"].get("remove_orphaned_files", True):
         return
-    
-    backup_dir = CONFIG["paths"]["backup_dir"]
-    backup_dir.mkdir(exist_ok=True)
-    
-    backup_file = backup_dir / f"posts_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    
-    with open(backup_file, "w", encoding="utf-8") as f:
-        json.dump(db, f, indent=2, ensure_ascii=False)
-    
-    logger.info(f"📦 بکاپ دیتابیس ایجاد شد: {backup_file}")
-    
-    # حذف بکاپ‌های قدیمی (فقط 5 بکاپ آخر نگهداری شود)
+    media_dir = Path(CONFIG["paths"]["media_dir"])
+    if not media_dir.exists():
+        return
+    used = media_files_referenced_by(db)
+    removed = 0
+    for path in media_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix == ".part":
+            path.unlink(missing_ok=True)
+            removed += 1
+            continue
+        rel = str(path.relative_to(media_dir))
+        if rel not in used:
+            path.unlink(missing_ok=True)
+            removed += 1
+    if removed:
+        logger.info("Removed %d orphaned media file(s)", removed)
+
+
+def cleanup_old_posts(db: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove posts older than TELEGRAM_MIRROR_MAX_AGE_HOURS when enabled."""
+    if not CONFIG["cleanup"].get("remove_old_posts", False):
+        return db
+    max_age = int(CONFIG["time"].get("max_post_age_hours", 0))
+    if max_age <= 0:
+        return db
+
+    cutoff = utc_now() - timedelta(hours=max_age)
+    for channel, posts in list(db.get("channels", {}).items()):
+        kept = []
+        for post in posts:
+            parsed = parse_datetime(post.get("date", ""))
+            if parsed is None or parsed >= cutoff:
+                kept.append(post)
+        if kept:
+            db["channels"][channel] = kept
+        else:
+            del db["channels"][channel]
+    return db
+
+
+def backup_database(db: Dict[str, Any]) -> None:
+    """Save a small JSON backup before destructive cleanup operations."""
+    if not CONFIG["cleanup"].get("backup_before_cleanup", True):
+        return
+    backup_dir = Path(CONFIG["paths"]["backup_dir"])
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    backup_file = backup_dir / f"posts_backup_{utc_now().strftime('%Y%m%d_%H%M%S')}.json"
+    backup_file.write_text(json.dumps(db, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     backups = sorted(backup_dir.glob("posts_backup_*.json"))
     for old_backup in backups[:-5]:
-        old_backup.unlink()
+        old_backup.unlink(missing_ok=True)
 
 
-# ============================================================================
-# STATISTICS
-# ============================================================================
+def enforce_media_size_limit(db: Dict[str, Any]) -> None:
+    """Prune oldest referenced files if media/ exceeds the configured size."""
+    media_dir = Path(CONFIG["paths"]["media_dir"])
+    max_bytes = int(CONFIG["limits"].get("max_total_size_mb", 0)) * 1024 * 1024
+    if max_bytes <= 0 or not media_dir.exists():
+        return
 
-def print_statistics(db: Dict):
-    """نمایش آمار نهایی"""
-    stats = db.get("statistics", {})
-    
-    logger.info("=" * 60)
-    logger.info("📊 آمار نهایی")
-    logger.info("=" * 60)
-    logger.info(f"📺 کانال‌ها: {len(db.get('channels', {}))}")
-    logger.info(f"📝 کل پست‌ها: {stats.get('total_posts', 0)}")
-    logger.info(f"🖼️ کل رسانه‌ها: {stats.get('total_media', 0)}")
-    logger.info(f"🔗 کل لینک‌ها: {stats.get('total_links', 0)}")
-    
-    media_dir = CONFIG["paths"]["media_dir"]
-    if media_dir.exists():
-        media_count = sum(1 for _ in media_dir.rglob("*") if _.is_file())
-        total_size = sum(f.stat().st_size for f in media_dir.rglob("*") if f.is_file())
-        logger.info(f"💾 فایل‌های رسانه: {media_count} فایل ({total_size / (1024*1024):.2f} MB)")
-    
-    logger.info(f"⏰ حداکثر سن پست‌ها: {CONFIG['time']['max_post_age_hours']} ساعت")
-    logger.info(f"🕐 آخرین بروزرسانی: {db.get('last_update', 'ندارد')}")
-    logger.info("=" * 60)
+    files = [path for path in media_dir.rglob("*") if path.is_file() and path.suffix != ".part"]
+    total = sum(path.stat().st_size for path in files)
+    if total <= max_bytes:
+        return
+
+    files.sort(key=lambda path: path.stat().st_mtime)
+    removed_rel: Set[str] = set()
+    for path in files:
+        if total <= max_bytes:
+            break
+        size = path.stat().st_size
+        rel = str(path.relative_to(media_dir))
+        path.unlink(missing_ok=True)
+        removed_rel.add(rel)
+        total -= size
+
+    if removed_rel:
+        for posts in db.get("channels", {}).values():
+            for post in posts:
+                post["media"] = [media for media in post.get("media", []) if media.get("file") not in removed_rel]
+                post["has_media"] = bool(post.get("media"))
+        logger.info("Pruned %d media file(s) to respect size limit", len(removed_rel))
 
 
-# ============================================================================
-# MAIN FUNCTION
-# ============================================================================
+def print_statistics(db: Dict[str, Any]) -> None:
+    stats = calculate_statistics(db)
+    logger.info("Channels: %d", len(db.get("channels", {})))
+    logger.info("Posts: %d", stats["total_posts"])
+    logger.info("Media references: %d", stats["total_media"])
+    logger.info("Links: %d", stats["total_links"])
+    logger.info("Media size: %.2f MB", stats["total_size_mb"])
 
-def main():
-    """تابع اصلی برنامه"""
-    start_time = time.time()
-    
-    logger.info("=" * 60)
-    logger.info("🪞 Telegram Mirror - Ultra-Stable Enterprise Edition")
-    logger.info("=" * 60)
-    logger.info(f"⏰ حداکثر سن پست‌ها: {CONFIG['time']['max_post_age_hours']} ساعت")
-    logger.info(f"🕐 پاکسازی خودکار: هر {CONFIG['time']['cleanup_interval_hours']} ساعت")
-    logger.info("=" * 60)
-    
-    # ایجاد پوشه‌ها
-    for path in CONFIG["paths"].values():
-        if isinstance(path, Path):
-            path.mkdir(exist_ok=True)
-    
-    # بارگذاری کانال‌ها
+
+def ensure_directories() -> None:
+    for key in ["media_dir", "cache_dir", "logs_dir", "backup_dir"]:
+        Path(CONFIG["paths"][key]).mkdir(parents=True, exist_ok=True)
+
+
+def self_test() -> int:
+    """Run lightweight checks that do not require network access."""
+    errors = []
+    if not Path(CONFIG["paths"]["list_file"]).exists():
+        errors.append("list.txt is missing")
+    if Path(CONFIG["paths"]["db_file"]).exists():
+        try:
+            json.loads(Path(CONFIG["paths"]["db_file"]).read_text(encoding="utf-8"))
+        except Exception as exc:
+            errors.append(f"posts.json is invalid: {exc}")
+    sample_html = '<div class="tgme_widget_message" data-post="demo/1"><time datetime="2026-01-01T00:00:00+00:00"></time><div class="tgme_widget_message_text">hello https://github.com</div></div>'
+    with_skip = CONFIG["processing"].get("skip_old_posts")
+    CONFIG["processing"]["skip_old_posts"] = False
+    try:
+        if not parse_posts(sample_html, "demo", set()):
+            errors.append("HTML parser self-test failed")
+    finally:
+        CONFIG["processing"]["skip_old_posts"] = with_skip
+    if errors:
+        for error in errors:
+            logger.error(error)
+        return 1
+    logger.info("Self-test passed")
+    return 0
+
+
+def run() -> int:
+    setup_logging()
+    ensure_directories()
+    logger.info("Telegram Mirror started")
+
     channels = load_channels()
     if not channels:
-        logger.error("هیچ کانالی برای پردازش وجود ندارد")
-        return
-    
-    # بارگذاری دیتابیس
+        logger.error("No valid channels found in %s", CONFIG["paths"]["list_file"])
+        return 1
+
     db = load_database()
-    
-    # بررسی نیاز به پاکسازی
-    last_cleanup = db.get("last_cleanup")
-    if last_cleanup:
-        try:
-            last_cleanup_date = datetime.fromisoformat(last_cleanup)
-            hours_since_cleanup = (datetime.now() - last_cleanup_date).total_seconds() / 3600
-            need_cleanup = hours_since_cleanup >= CONFIG["time"]["cleanup_interval_hours"]
-        except:
-            need_cleanup = True
-    else:
-        need_cleanup = True
-    
-    if need_cleanup:
-        logger.info("🕐 شروع پاکسازی دوره‌ای...")
+    db.setdefault("channels", {})
+
+    if CONFIG["cleanup"].get("remove_old_posts", False):
         backup_database(db)
         db = cleanup_old_posts(db)
-        cleanup_orphaned_files(db)
-        db["last_cleanup"] = datetime.now().isoformat()
-        save_database(db)
-    
-    # پردازش موازی کانال‌ها
-    with ThreadPoolExecutor(max_workers=CONFIG["limits"]["max_channels_parallel"]) as executor:
+
+    with ThreadPoolExecutor(max_workers=int(CONFIG["limits"]["max_channels_parallel"])) as executor:
         futures = {executor.submit(process_channel, channel, db): channel for channel in channels}
-        
         for future in as_completed(futures):
             channel = futures[future]
             try:
-                db = future.result()
-            except Exception as e:
-                logger.error(f"خطا در پردازش کانال {channel}: {e}")
-    
-    # پاکسازی نهایی
+                new_posts = future.result()
+            except Exception as exc:
+                logger.error("Channel @%s failed: %s", channel, exc)
+                continue
+            if new_posts:
+                existing = db["channels"].get(channel, [])
+                db["channels"][channel] = merge_posts(existing, new_posts)
+
     cleanup_orphaned_files(db)
-    
-    # ذخیره دیتابیس
+    enforce_media_size_limit(db)
     save_database(db)
-    
-    # نمایش آمار
     print_statistics(db)
-    
-    elapsed = time.time() - start_time
-    logger.info(f"⏱️ زمان اجرا: {elapsed:.2f} ثانیه")
-    logger.info("✅ عملیات با موفقیت کامل شد!")
+    logger.info("Telegram Mirror finished")
+    return 0
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Mirror public Telegram channels into posts.json and media/.")
+    parser.add_argument("--self-test", action="store_true", help="run offline validation checks and exit")
+    parser.add_argument("--no-media", action="store_true", help="parse posts without downloading media files")
+    parser.add_argument("--no-cleanup", action="store_true", help="do not remove orphaned media files")
+    return parser
+
+
+def main(argv: Optional[Iterable[str]] = None) -> int:
+    parser = build_arg_parser()
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    setup_logging()
+
+    if args.no_media:
+        CONFIG["processing"]["download_media"] = False
+    if args.no_cleanup:
+        CONFIG["cleanup"]["remove_orphaned_files"] = False
+    if args.self_test:
+        return self_test()
+    return run()
 
 
 if __name__ == "__main__":
     try:
-        main()
+        raise SystemExit(main())
     except KeyboardInterrupt:
-        logger.info("⚠️ برنامه توسط کاربر متوقف شد")
-    except Exception as e:
-        logger.error(f"❌ خطای غیرمنتظره: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.info("Interrupted by user")
+        raise SystemExit(130)
