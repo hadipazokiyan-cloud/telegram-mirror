@@ -35,6 +35,8 @@ from urllib3.util.retry import Retry
 
 
 # File extensions that are safe and useful to archive from public posts.
+# Intentionally excludes web/code extensions such as .html, .js, .css, and
+# .json because those are usually landing pages, not Telegram media files.
 VALID_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".tiff", ".heic",
     ".mp4", ".webm", ".mov", ".avi", ".mkv", ".flv", ".m4v", ".3gp", ".mpeg", ".mpg", ".wmv",
@@ -43,7 +45,25 @@ VALID_EXTENSIONS = {
     ".odt", ".ods", ".odp", ".csv",
     ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".tgz", ".tbz2",
     ".apk", ".exe", ".msi", ".deb", ".rpm", ".appimage", ".dmg", ".bin",
-    ".py", ".js", ".html", ".css", ".json", ".xml", ".yaml", ".yml", ".toml",
+}
+
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".tiff", ".heic"}
+VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".avi", ".mkv", ".flv", ".m4v", ".3gp", ".mpeg", ".mpg", ".wmv"}
+AUDIO_EXTENSIONS = {".mp3", ".ogg", ".wav", ".m4a", ".flac", ".aac", ".opus", ".wma", ".aiff"}
+DOCUMENT_EXTENSIONS = VALID_EXTENSIONS - IMAGE_EXTENSIONS - VIDEO_EXTENSIONS - AUDIO_EXTENSIONS
+
+BLOCKED_MEDIA_HOSTS = {
+    "t.me",
+    "telegram.me",
+    "telegram.org",
+    "web.telegram.org",
+    "core.telegram.org",
+    "telegram.dog",
+}
+
+HTML_CONTENT_TYPES = {
+    "text/html",
+    "application/xhtml+xml",
 }
 
 EXCLUDED_PATTERNS = [
@@ -341,6 +361,15 @@ def get_extension_from_url(url: str) -> Optional[str]:
     return None
 
 
+def is_blocked_media_host(url: str) -> bool:
+    """Reject Telegram/web page hosts before they can be downloaded as files."""
+    try:
+        host = urlparse(url).netloc.lower().split("@")[-1].split(":")[0]
+    except Exception:
+        return True
+    return any(host == blocked or host.endswith("." + blocked) for blocked in BLOCKED_MEDIA_HOSTS)
+
+
 def is_valid_media_url(url: str) -> bool:
     """Return True for downloadable media/document URLs only."""
     if not url or not isinstance(url, str):
@@ -350,6 +379,8 @@ def is_valid_media_url(url: str) -> bool:
         return False
     if normalized.startswith("//"):
         normalized = "https:" + normalized
+    if is_blocked_media_host(normalized):
+        return False
     if any(re.search(pattern, normalized) for pattern in EXCLUDED_PATTERNS):
         return False
     return get_extension_from_url(normalized) is not None
@@ -357,11 +388,11 @@ def is_valid_media_url(url: str) -> bool:
 
 def classify_media(ext: str, default: str = "document") -> str:
     ext = ext.lower()
-    if ext in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".tiff", ".heic"}:
+    if ext in IMAGE_EXTENSIONS:
         return "image"
-    if ext in {".mp4", ".webm", ".mov", ".avi", ".mkv", ".flv", ".m4v", ".3gp", ".mpeg", ".mpg", ".wmv"}:
+    if ext in VIDEO_EXTENSIONS:
         return "video"
-    if ext in {".mp3", ".ogg", ".wav", ".m4a", ".flac", ".aac", ".opus", ".wma", ".aiff"}:
+    if ext in AUDIO_EXTENSIONS:
         return "audio"
     return default
 
@@ -540,9 +571,53 @@ def content_length_too_large(response: requests.Response) -> bool:
     return int(length) > int(CONFIG["limits"]["max_file_size_mb"]) * 1024 * 1024
 
 
+def normalized_content_type(response: requests.Response) -> str:
+    """Return the response Content-Type without charset parameters."""
+    return response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+
+
+def content_type_matches_extension(content_type: str, ext: str) -> bool:
+    """Validate that a downloaded response is not an HTML landing page."""
+    if not content_type:
+        return True
+    if content_type in HTML_CONTENT_TYPES or content_type.startswith("text/html"):
+        return False
+    if ext in IMAGE_EXTENSIONS:
+        return content_type.startswith("image/") or content_type == "application/octet-stream"
+    if ext in VIDEO_EXTENSIONS:
+        return content_type.startswith("video/") or content_type == "application/octet-stream"
+    if ext in AUDIO_EXTENSIONS:
+        return content_type.startswith("audio/") or content_type == "application/octet-stream"
+    if ext in DOCUMENT_EXTENSIONS:
+        return (
+            content_type.startswith("application/")
+            or content_type.startswith("text/plain")
+            or content_type.startswith("text/csv")
+            or content_type == "application/octet-stream"
+        )
+    return False
+
+
+def looks_like_html_file(path: Path) -> bool:
+    """Detect saved Telegram/web HTML pages even when they have media names."""
+    try:
+        sample = path.read_bytes()[:512].lower().lstrip()
+    except OSError:
+        return False
+    return sample.startswith((b"<!doctype html", b"<html")) or b"<html" in sample[:128]
+
+
 def download_file(url: str, filepath: Path) -> bool:
     """Download a file using a .part file and atomic rename."""
+    ext = filepath.suffix.lower()
+    if ext not in VALID_EXTENSIONS or not is_valid_media_url(url):
+        logger.warning("Skipping invalid media URL: %s", url)
+        return False
     if filepath.exists() and filepath.stat().st_size > 0:
+        if looks_like_html_file(filepath):
+            logger.warning("Removing HTML saved as media: %s", filepath)
+            filepath.unlink(missing_ok=True)
+            return False
         return True
     if not CONFIG["processing"].get("download_media", True):
         return False
@@ -562,6 +637,20 @@ def download_file(url: str, filepath: Path) -> bool:
                 if response.status_code not in {200, 206}:
                     logger.warning("Download HTTP %s for %s", response.status_code, url)
                     continue
+                if is_blocked_media_host(response.url):
+                    logger.warning("Skipping media URL redirected to Telegram page: %s -> %s", url, response.url)
+                    temp_path.unlink(missing_ok=True)
+                    return False
+                final_ext = get_extension_from_url(response.url) or ext
+                if final_ext not in VALID_EXTENSIONS:
+                    logger.warning("Skipping download with invalid final extension: %s", response.url)
+                    temp_path.unlink(missing_ok=True)
+                    return False
+                content_type = normalized_content_type(response)
+                if not content_type_matches_extension(content_type, ext):
+                    logger.warning("Skipping %s because Content-Type is %s", url, content_type or "missing")
+                    temp_path.unlink(missing_ok=True)
+                    return False
                 if content_length_too_large(response):
                     logger.warning("Skipping oversized file by Content-Length: %s", url)
                     temp_path.unlink(missing_ok=True)
@@ -581,6 +670,10 @@ def download_file(url: str, filepath: Path) -> bool:
                         fh.write(chunk)
 
             if temp_path.exists() and temp_path.stat().st_size > 0:
+                if looks_like_html_file(temp_path):
+                    logger.warning("Skipping HTML response saved as media: %s", url)
+                    temp_path.unlink(missing_ok=True)
+                    return False
                 temp_path.replace(filepath)
                 logger.info("Downloaded %s", filepath.name)
                 return True
@@ -813,6 +906,37 @@ def cleanup_orphaned_files(db: Dict[str, Any]) -> None:
         logger.info("Removed %d orphaned media file(s)", removed)
 
 
+def cleanup_invalid_media_files(db: Dict[str, Any]) -> None:
+    """Remove HTML or unsupported files that were previously saved as media."""
+    media_dir = Path(CONFIG["paths"]["media_dir"])
+    if not media_dir.exists():
+        return
+
+    removed_files: Set[str] = set()
+    for path in media_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        suffix = path.suffix.lower()
+        rel = str(path.relative_to(media_dir))
+        if suffix == ".part" or suffix not in VALID_EXTENSIONS or looks_like_html_file(path):
+            path.unlink(missing_ok=True)
+            removed_files.add(rel)
+
+    if not removed_files:
+        return
+
+    for posts in db.get("channels", {}).values():
+        for post in posts:
+            post["media"] = [
+                media
+                for media in post.get("media", [])
+                if media.get("file") not in removed_files and Path(str(media.get("file", ""))).suffix.lower() in VALID_EXTENSIONS
+            ]
+            post["has_media"] = bool(post.get("media"))
+
+    logger.info("Removed %d invalid media file(s)", len(removed_files))
+
+
 def cleanup_old_posts(db: Dict[str, Any]) -> Dict[str, Any]:
     """Remove posts older than TELEGRAM_MIRROR_MAX_AGE_HOURS when enabled."""
     if not CONFIG["cleanup"].get("remove_old_posts", False):
@@ -931,6 +1055,7 @@ def run() -> int:
 
     db = load_database()
     db.setdefault("channels", {})
+    cleanup_invalid_media_files(db)
 
     if CONFIG["cleanup"].get("remove_old_posts", False):
         backup_database(db)
@@ -950,6 +1075,7 @@ def run() -> int:
                 db["channels"][channel] = merge_posts(existing, new_posts)
 
     cleanup_orphaned_files(db)
+    cleanup_invalid_media_files(db)
     enforce_media_size_limit(db)
     save_database(db)
     print_statistics(db)
