@@ -1,8 +1,33 @@
+# Python
 __pycache__/
-*.pyc
-.DS_Store
-media/*.part
-posts.json.tmp
+*.py[cod]
+*.pyo
+.venv/
 venv/
 env/
-.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Runtime / temporary files
+*.part
+*.tmp
+*.log
+logs/*.log
+posts.json.tmp
+posts.broken-*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Keep generated mirror data tracked intentionally:
+# posts.json
+# media/
