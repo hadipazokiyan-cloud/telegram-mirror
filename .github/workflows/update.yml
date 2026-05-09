@@ -1,304 +1,210 @@
-name: 🔥 Force Update - Complete Cache Clean
+name: 🔄 Telegram Mirror Auto-Update
 
 on:
+  schedule:
+    - cron: '*/30 * * * *'
+    - cron: '0 */6 * * *'
+    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
-      clean_all:
-        description: 'پاکسازی کامل همه چیز (کش، دیتابیس، مدیا)'
+      post_limit:
+        description: 'Posts checked per channel'
         required: false
-        type: boolean
-        default: true
-      keep_media:
-        description: 'نگهداری فایل‌های مدیا (فقط کش و دیتابیس پاک شود)'
+        default: '30'
+      keep_posts:
+        description: 'Posts kept per channel'
+        required: false
+        default: '100'
+      no_media:
+        description: 'Run without downloading media'
         required: false
         type: boolean
         default: false
+  push:
+    branches: [main]
+    paths:
+      - 'list.txt'
+      - 'mirror.py'
+      - 'test_mirror.py'
+      - 'requirements.txt'
+      - '.github/workflows/update.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: telegram-mirror-update
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.11'
+  PIP_CACHE_DIR: ~/.cache/pip
+  TELEGRAM_MIRROR_TIMEOUT: '60'
+  TELEGRAM_MIRROR_RETRIES: '3'
+  TELEGRAM_MIRROR_POST_LIMIT: ${{ github.event.inputs.post_limit || '30' }}
+  TELEGRAM_MIRROR_KEEP_POSTS: ${{ github.event.inputs.keep_posts || '100' }}
+  TELEGRAM_MIRROR_MAX_FILE_MB: '100'
+  TELEGRAM_MIRROR_MAX_TOTAL_MB: '500'
+  TELEGRAM_MIRROR_CHANNEL_WORKERS: '1'
+  TELEGRAM_MIRROR_DOWNLOAD_WORKERS: '3'
+  TELEGRAM_MIRROR_DELAY_MIN: '1'
+  TELEGRAM_MIRROR_DELAY_MAX: '4'
+  TELEGRAM_MIRROR_CLEANUP_ORPHANS: 'true'
 
 jobs:
-  force-update:
-    name: 🔥 Force Update & Clean Cache
+  update-mirror:
+    name: Update mirror safely
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    
+
     steps:
-      # ============================================
-      # 1. Checkout کد
-      # ============================================
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          persist-credentials: true
 
-      # ============================================
-      # 2. Setup Python
-      # ============================================
-      - name: 🐍 Setup Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
 
-      # ============================================
-      # 3. پاکسازی کامل کش پایتون
-      # ============================================
-      - name: 🧹 Clean Python cache
+      - name: Install dependencies with retry
         run: |
-          echo "=========================================="
-          echo "🧹 CLEANING PYTHON CACHE"
-          echo "=========================================="
-          
-          # حذف کش پایتون
-          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-          find . -type f -name "*.pyc" -delete 2>/dev/null || true
-          find . -type f -name "*.pyo" -delete 2>/dev/null || true
-          
-          # حذف کش pip
-          pip cache purge 2>/dev/null || true
-          rm -rf ~/.cache/pip 2>/dev/null || true
-          
-          echo "✅ Python cache cleaned"
-
-      # ============================================
-      # 4. پاکسازی کش HTML
-      # ============================================
-      - name: 🧹 Clean HTML cache
-        run: |
-          echo "=========================================="
-          echo "🧹 CLEANING HTML CACHE"
-          echo "=========================================="
-          
-          rm -rf _cache_html/ 2>/dev/null || true
-          rm -rf .cache/ 2>/dev/null || true
-          rm -rf html_cache/ 2>/dev/null || true
-          
-          echo "✅ HTML cache cleaned"
-
-      # ============================================
-      # 5. پاکسازی دیتابیس
-      # ============================================
-      - name: 🧹 Clean database
-        run: |
-          echo "=========================================="
-          echo "🧹 CLEANING DATABASE"
-          echo "=========================================="
-          
-          # بکاپ از دیتابیس قدیمی (در صورت وجود)
-          if [ -f "posts.json" ]; then
-            cp posts.json posts.json.backup.$(date +%Y%m%d_%H%M%S)
-            echo "📦 Backup created: posts.json.backup.*"
-          fi
-          
-          # حذف فایل‌های دیتابیس
-          rm -f posts.json 2>/dev/null || true
-          rm -f posts.json.tmp 2>/dev/null || true
-          rm -f posts.json.corrupt 2>/dev/null || true
-          
-          echo "✅ Database cleaned"
-
-      # ============================================
-      # 6. پاکسازی پوشه media (اختیاری)
-      # ============================================
-      - name: 🧹 Clean media files
-        if: github.event.inputs.clean_all == 'true'
-        run: |
-          echo "=========================================="
-          echo "🧹 CLEANING MEDIA FILES"
-          echo "=========================================="
-          
-          # حذف کامل پوشه media
-          rm -rf media/ 2>/dev/null || true
-          
-          # ایجاد پوشه‌های خالی
-          mkdir -p media/{images,videos,audios,documents,archives,applications,code,other}
-          
-          echo "✅ Media files cleaned"
-
-      # ============================================
-      # 7. نمایش وضعیت قبل از اجرا
-      # ============================================
-      - name: 📊 Status before update
-        run: |
-          echo "=========================================="
-          echo "📊 STATUS BEFORE UPDATE"
-          echo "=========================================="
-          
-          echo "📁 Current directory:"
-          ls -la
-          
-          echo ""
-          echo "📁 Media directory (if exists):"
-          if [ -d "media" ]; then
-            ls -la media/ | head -20
-            echo "Total media files: $(find media -type f 2>/dev/null | wc -l)"
-          else
-            echo "Media directory does not exist"
-          fi
-          
-          echo ""
-          echo "📄 posts.json:"
-          if [ -f "posts.json" ]; then
-            echo "Size: $(du -sh posts.json | cut -f1)"
-            echo "Content preview:"
-            head -20 posts.json
-          else
-            echo "posts.json does not exist"
-          fi
-
-      # ============================================
-      # 8. نصب وابستگی‌ها (بدون کش)
-      # ============================================
-      - name: 📦 Install dependencies (no cache)
-        run: |
-          echo "=========================================="
-          echo "📦 INSTALLING DEPENDENCIES"
-          echo "=========================================="
-          
-          pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
-          
-          echo "✅ Dependencies installed"
-
-      # ============================================
-      # 9. ایجاد پوشه‌های لازم
-      # ============================================
-      - name: 📁 Create directories
-        run: |
-          mkdir -p media/{images,videos,audios,documents,archives,applications,code,other}
-          mkdir -p website
-          mkdir -p logs
-          echo "✅ Directories created"
-
-      # ============================================
-      # 10. ایجاد فایل posts.json خالی (در صورت نیاز)
-      # ============================================
-      - name: 📄 Create empty posts.json if not exists
-        run: |
-          if [ ! -f "posts.json" ]; then
-            echo '{"channels": {}, "last_update": null}' > posts.json
-            echo "✅ Empty posts.json created"
-          fi
-
-      # ============================================
-      # 11. اجرای اسکریپت میرور
-      # ============================================
-      - name: 🏃 Run mirror script
-        id: mirror
-        run: |
-          echo "=========================================="
-          echo "🚀 RUNNING MIRROR SCRIPT"
-          echo "=========================================="
-          echo "Start time: $(date)"
-          echo ""
-          
-          python mirror.py 2>&1 | tee mirror_output.log
-          
-          echo ""
-          echo "End time: $(date)"
-          echo "✅ Mirror script completed"
-
-      # ============================================
-      # 12. بررسی تغییرات
-      # ============================================
-      - name: 🔍 Check for changes
-        id: changes
-        run: |
-          git add posts.json media/ website/
-          
-          if git diff --staged --quiet; then
-            echo "📭 No changes detected"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "📝 Changes detected!"
-            git diff --staged --stat
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          fi
-
-      # ============================================
-      # 13. Commit و Push
-      # ============================================
-      - name: 💾 Commit and push changes
-        if: steps.changes.outputs.has_changes == 'true'
-        run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git commit -m "🔥 Force update: $(date +'%Y-%m-%d %H:%M:%S')"
-          
-          for i in 1 2 3; do
-            if git push origin main; then
-              echo "✅ Push successful!"
-              break
-            else
-              echo "⚠️ Push attempt $i failed, retrying..."
-              sleep 5
-              git pull --rebase origin main
+          set -e
+          python -m pip install --upgrade pip setuptools wheel
+          for attempt in 1 2 3; do
+            if python -m pip install -r requirements.txt; then
+              exit 0
             fi
+            echo "Dependency install failed on attempt ${attempt}; retrying..."
+            sleep $((attempt * 15))
+          done
+          exit 1
+
+      - name: Prepare runtime files
+        run: |
+          mkdir -p media logs backups _cache_html
+          if [ ! -f posts.json ]; then
+            printf '{"channels": {}, "last_update": null, "last_cleanup": null, "statistics": {}}\n' > posts.json
+          fi
+          if [ ! -f list.txt ]; then
+            touch list.txt
+          fi
+
+      - name: Offline validation
+        id: validation
+        continue-on-error: true
+        run: |
+          python -m py_compile mirror.py test_mirror.py
+          python -m json.tool posts.json >/dev/null
+          python mirror.py --self-test
+          python -m unittest -v test_mirror.py
+
+      - name: Run mirror with retries
+        id: mirror
+        env:
+          NO_MEDIA_INPUT: ${{ github.event.inputs.no_media || 'false' }}
+        run: |
+          set +e
+          mkdir -p logs
+          args=""
+          if [ "$NO_MEDIA_INPUT" = "true" ]; then
+            args="--no-media"
+          fi
+
+          success=false
+          delays="30 60 120"
+          attempt=1
+          for delay in $delays; do
+            echo "Mirror attempt ${attempt}/3 with args: ${args}" | tee -a logs/mirror_output.log
+            python mirror.py $args 2>&1 | tee -a logs/mirror_output.log
+            status=${PIPESTATUS[0]}
+            if [ "$status" -eq 0 ]; then
+              success=true
+              break
+            fi
+            echo "Attempt ${attempt} failed with status ${status}; sleeping ${delay}s" | tee -a logs/mirror_output.log
+            sleep "$delay"
+            attempt=$((attempt + 1))
           done
 
-      # ============================================
-      # 14. نمایش آمار نهایی
-      # ============================================
-      - name: 📊 Final statistics
+          if [ "$success" != "true" ] && [ "$NO_MEDIA_INPUT" != "true" ]; then
+            echo "Primary run failed; trying safe fallback without media and cleanup" | tee -a logs/mirror_output.log
+            python mirror.py --no-media --no-cleanup 2>&1 | tee -a logs/mirror_output.log
+            status=${PIPESTATUS[0]}
+            if [ "$status" -eq 0 ]; then
+              success=true
+            fi
+          fi
+
+          echo "success=${success}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Write run summary
         if: always()
         run: |
-          echo "=========================================="
-          echo "📊 FINAL STATISTICS"
-          echo "=========================================="
-          
-          if [ -f "posts.json" ]; then
-            echo "📁 posts.json size: $(du -sh posts.json | cut -f1)"
-            echo ""
-            python3 << 'EOF'
-            import json
-            try:
-                with open('posts.json', 'r') as f:
-                    data = json.load(f)
-                channels = data.get('channels', {})
-                total_posts = sum(len(posts) for posts in channels.values())
-                total_media = 0
-                for posts in channels.values():
-                    for post in posts:
-                        total_media += len(post.get('media', []))
-                print(f"📺 Channels: {len(channels)}")
-                print(f"📝 Total posts: {total_posts}")
-                print(f"🖼️ Total media: {total_media}")
-                print(f"🕐 Last update: {data.get('last_update', 'N/A')}")
-            except Exception as e:
-                print(f"Error reading posts.json: {e}")
-            EOF
-          fi
-          
-          echo ""
-          echo "📁 Media files:"
-          if [ -d "media" ]; then
-            echo "   Count: $(find media -type f 2>/dev/null | wc -l)"
-            echo "   Size: $(du -sh media 2>/dev/null | cut -f1)"
-          fi
-          
-          echo "=========================================="
+          mkdir -p logs
+          {
+            echo "Last run: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "Workflow: $GITHUB_RUN_ID"
+            echo "Repository: $GITHUB_REPOSITORY"
+            echo "Validation: ${{ steps.validation.outcome }}"
+            echo "Mirror success: ${{ steps.mirror.outputs.success || 'false' }}"
+            echo "Media files: $(find media -type f ! -name '*.part' 2>/dev/null | wc -l)"
+            echo "Media size: $(du -sh media 2>/dev/null | cut -f1 || echo 0)"
+          } > logs/last_run.txt
 
-      # ============================================
-      # 15. ذخیره لاگ برای دیباگ
-      # ============================================
-      - name: 📦 Upload logs
+      - name: Repair invalid posts.json as last resort
+        if: always()
+        run: |
+          if ! python -m json.tool posts.json >/dev/null 2>&1; then
+            mkdir -p backups
+            cp posts.json "backups/posts_invalid_${GITHUB_RUN_ID}.json" || true
+            printf '{"channels": {}, "last_update": null, "last_cleanup": null, "statistics": {}}\n' > posts.json
+            echo "posts.json was invalid and has been replaced with an empty database" >> logs/last_run.txt
+          fi
+
+      - name: Commit and push changes
+        if: always()
+        run: |
+          set +e
+          git add posts.json media logs/last_run.txt 2>/dev/null
+          if [ -d backups ]; then
+            find backups -maxdepth 1 -type f -name "*.json" -print0 | xargs -0 -r git add
+          fi
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "🔄 Auto-update Telegram mirror"
+
+          for attempt in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Push successful"
+              exit 0
+            fi
+            echo "Push failed on attempt ${attempt}; rebasing and retrying"
+            git pull --rebase --autostash origin main || true
+            sleep $((attempt * 20))
+          done
+          echo "Push failed after retries"
+          exit 0
+
+      - name: Upload debug artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: force-update-logs-${{ github.run_id }}
+          name: telegram-mirror-debug-${{ github.run_id }}
           path: |
-            mirror_output.log
+            logs/
+            backups/
             posts.json
-            posts.json.backup.*
+          if-no-files-found: ignore
           retention-days: 7
-
-      # ============================================
-      # 16. اعلان اتمام
-      # ============================================
-      - name: ✅ Completion message
-        run: |
-          echo "=========================================="
-          echo "✅ FORCE UPDATE COMPLETED"
-          echo "=========================================="
-          echo "Run ID: ${{ github.run_id }}"
-          echo "Status: ${{ job.status }}"
-          echo "Logs saved as artifact"
-          echo "=========================================="
