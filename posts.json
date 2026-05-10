@@ -2,6 +2,21 @@
   "channels": {
     "vslshi": [
       {
+        "id": 9077,
+        "text": "ترکیبی :\nvless://58715b6d-83c2-4695-b536-e5de12913eb6@t1.arshiaspeed.shop:2086?path=%2F&security=none&encryption=none&type=ws#@vslshi\nاموزش ترکیب\n-\n@vslshi",
+        "date": "2026-05-10T15:24:55+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vslshi_9077_0_2487334b.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vslshi/9077"
+      },
+      {
         "id": 9075,
         "text": "اینجا جوین باشید 1 ریال پول به vpn ندید : https://t.me/+4rp46xptT7QzZWFh  https://t.me/+4rp46xptT7QzZWFh",
         "date": "2026-05-10T14:18:35+00:00",
@@ -1665,24 +1680,66 @@
         "has_media": true,
         "has_links": true,
         "source": "https://t.me/vslshi/8876"
-      },
+      }
+    ],
+    "Configir98": [
       {
-        "id": 8872,
-        "text": "ویتوری + سایفون\nvless://77344400-3bc3-4ed7-8dc3-1dec550f992f@novatechhub.ir:80?path=%2F&security=none&encryption=none&host=weed.senatorvip.ir&type=ws#@vslshi\nاموزش ترکیب\n-\n@vslshi",
-        "date": "2026-05-08T22:02:47+00:00",
+        "id": 8538,
+        "text": "🖤\nفروش کانفینگ مخصوص شرایط\n🇮🇷\n1 GB  درصد تخفیف ۱۰\n➡️\ntoman  300\n⚡️\nقیمت همکاری برای همکاران محترم داخل ربات شارژ شد\n⚡️\nتست بخاطر شرایط موجود نمی‌باشد درخواست نکنین\n🙏\nخرید\nفقط از طریق محصولات دیگر\nداخل بات\n❤️\n➡️\nhttps://t.me/Admin starling",
+        "date": "2026-05-10T15:21:23+00:00",
         "media": [
           {
             "type": "image",
-            "file": "vslshi_8872_0_0840edb9.jpg"
+            "file": "Configir98_8538_0_9bf37645.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/Admin",
+            "type": "telegram",
+            "display_text": "https://t.me/Admin"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/Configir98/8538"
+      },
+      {
+        "id": 8537,
+        "text": "🔐\n𝗩𝟮𝗿𝗮𝘆𝗡𝗚\n➕\n𝗣𝘀𝗶𝗽𝗵𝗼𝗻\n📱\n{\"remarks\":\"https://t.me/Configir98\",\"log\":{\"loglevel\":\"warning\"},\"inbounds\":[{\"tag\":\"socks\",\"port\":10808,\"protocol\":\"socks\",\"settings\":{\"auth\":\"noauth\",\"udp\":true,\"userLevel\":8},\"sniffing\":{\"enabled\":true,\"destOverride\":[\"http\",\"tls\"],\"routeOnly\":false}}],\"outbounds\":[{\"tag\":\"proxy\",\"protocol\":\"vless\",\"settings\":{\"vnext\":[{\"address\":\"snapp.ir\",\"port\":80,\"users\":[{\"id\":\"00669e97-27fb-4273-878b-d514f7f4fd4b\",\"level\":8,\"encryption\":\"none\"}]}]},\"streamSettings\":{\"network\":\"ws\",\"wsSettings\":{\"path\":\"/\",\"headers\":{\"Host\":\"striker.starferi.ir\"}}},\"mux\":{\"enabled\":false,\"concurrency\":-1,\"xudpConcurrency\":8,\"xudpProxyUDP443\":\"\"}},{\"tag\":\"direct\",\"protocol\":\"freedom\",\"settings\":{\"domainStrategy\":\"UseIP\"},\"mux\":{\"enabled\":false,\"concurrency\":8,\"xudpConcurrency\":8,\"xudpProxyUDP443\":\"\"}},{\"tag\":\"block\",\"protocol\":\"blackhole\",\"settings\":{\"response\":{\"type\":\"http\"}},\"mux\":{\"enabled\":false,\"concurrency\":8,\"xudpConcurrency\":8,\"xudpProxyUDP443\":\"\"}}],\"dns\":{\"servers\":[\"1.1.1.1\"],\"hosts\":{\"domain:googleapis.cn\":\"googleapis.com\",\"dns.alidns.com\":[\"223.5.5.5\",\"223.6.6.6\",\"2400:3200::1\",\"2400:3200:baba::1\"],\"one.one.one.one\":[\"1.1.1.1\",\"1.0.0.1\",\"2606:4700:4700::1111\",\"2606:4700:4700::1001\"],\"dot.pub\":[\"1.12.12.12\",\"120.53.53.53\"],\"dns.google\":[\"8.8.8.8\",\"8.8.4.4\",\"2001:4860:4860::8888\",\"2001:4860:4860::8844\"],\"dns.quad9.net\":[\"9.9.9.9\",\"149.112.112.112\",\"2620:fe::fe\",\"2620:fe::9\"],\"common.dot.dns.yandex.net\":[\"77.88.8.8\",\"77.88.8.1\",\"2a02:6b8::feed:0ff\",\"2a02:6b8:0:1::feed:0ff\"]}},\"routing\":{\"domainStrategy\":\"IPIfNonMatch\",\"rules\":[{\"type\":\"field\",\"ip\":[\"1.1.1.1\"],\"outboundTag\":\"proxy\",\"port\":\"53\"},{\"type\":\"field\",\"ip\":[\"223.5.5.5\"],\"outboundTag\":\"direct\",\"port\":\"53\"}]}}\n✅\n@Configir98",
+        "date": "2026-05-10T15:01:54+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8537_0_9bf37645.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/Configir98",
+            "type": "telegram",
+            "display_text": "https://t.me/Configir98"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/Configir98/8537"
+      },
+      {
+        "id": 8536,
+        "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
+        "date": "2026-05-10T14:46:21+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8536_0_9bf37645.jpg"
           }
         ],
         "links": [],
         "has_media": true,
         "has_links": false,
-        "source": "https://t.me/vslshi/8872"
-      }
-    ],
-    "Configir98": [
+        "source": "https://t.me/Configir98/8536"
+      },
       {
         "id": 8535,
         "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\nاگه وصل نشدی با پروکسی پایین ترکیب کن\ntg://proxy?server=178.104.81.34&port=4455&secret=dd104462821249bd7ac519130220c25d09\n✅\n@Configir98",
@@ -3291,51 +3348,75 @@
         ],
         "links": [],
         "has_media": true
-      },
-      {
-        "id": 8384,
-        "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
-        "date": "2026-05-08T18:58:52+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "Configir98_8384_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/Ya3h52ApMyUqRuEI_4uBdBXCLnYCWQ37Uu1AnOHgWrO76rkwIzcMr94onWg9LR4nwI70wh9Dg2bHuRfHfr9YG8-819pc4TdGCHuuOqFNjf6hH_9JIEmGl6ynU69PXWR159bQOVG4ipY2oTNVG0mCtKDU8nDGy7tNsTQZX9tzl1gUNWKsTVmYIVsXwo8_VCa8wfDDwrAsVeAh1RgzoTwD_JTo1_ccd9XgZffU7Rr1zrWnWzdadc3CN9MmecLIrO4tqCKnNweyg_WRj71KG01SPHWRsZBvemi5BsWFDZLAQ3lzrJmsXCs9pMHp2vqVbYjmLx26St1EgS1Z88z2Gp-phg.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 8383,
-        "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
-        "date": "2026-05-08T18:38:06+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "Configir98_8383_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/Ya3h52ApMyUqRuEI_4uBdBXCLnYCWQ37Uu1AnOHgWrO76rkwIzcMr94onWg9LR4nwI70wh9Dg2bHuRfHfr9YG8-819pc4TdGCHuuOqFNjf6hH_9JIEmGl6ynU69PXWR159bQOVG4ipY2oTNVG0mCtKDU8nDGy7tNsTQZX9tzl1gUNWKsTVmYIVsXwo8_VCa8wfDDwrAsVeAh1RgzoTwD_JTo1_ccd9XgZffU7Rr1zrWnWzdadc3CN9MmecLIrO4tqCKnNweyg_WRj71KG01SPHWRsZBvemi5BsWFDZLAQ3lzrJmsXCs9pMHp2vqVbYjmLx26St1EgS1Z88z2Gp-phg.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 8382,
-        "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
-        "date": "2026-05-08T18:35:34+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "Configir98_8382_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/Ya3h52ApMyUqRuEI_4uBdBXCLnYCWQ37Uu1AnOHgWrO76rkwIzcMr94onWg9LR4nwI70wh9Dg2bHuRfHfr9YG8-819pc4TdGCHuuOqFNjf6hH_9JIEmGl6ynU69PXWR159bQOVG4ipY2oTNVG0mCtKDU8nDGy7tNsTQZX9tzl1gUNWKsTVmYIVsXwo8_VCa8wfDDwrAsVeAh1RgzoTwD_JTo1_ccd9XgZffU7Rr1zrWnWzdadc3CN9MmecLIrO4tqCKnNweyg_WRj71KG01SPHWRsZBvemi5BsWFDZLAQ3lzrJmsXCs9pMHp2vqVbYjmLx26St1EgS1Z88z2Gp-phg.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
       }
     ],
     "vipV2rayNGnp": [
+      {
+        "id": 17299,
+        "text": "🚀\n🚀\nفروش کانفینگ مخصوص شرایط\n⚡️\nهر گیگ 300 ت\n❤️\n⚡️\nقیمت همکاری داخل ربات شارژ شد\n⚡️\nتست نداریم بخاطر شرایط کانفینگ(افراد سود جو)\n🔥\nخرید فقط از طریق محصولات دیگر داخل بات\n🛫\nhttps://t.me/ Admin",
+        "date": "2026-05-10T15:21:30+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17299_0_4302825a.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/",
+            "type": "telegram",
+            "display_text": "https://t.me/"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/vipV2rayNGnp/17299"
+      },
+      {
+        "id": 17298,
+        "text": "🏳\nV2rayng + Psiphon\n📱\n{\"\nremarks\":\"vipV2rayNGnp\",\"log\":{\"loglevel\":\"warning\"},\"inbounds\":[{\"tag\":\"socks\",\"port\":10808,\"protocol\":\"socks\",\"settings\":{\"auth\":\"noauth\",\"udp\":true,\"userLevel\":8},\"sniffing\":{\"enabled\":true,\"destOverride\":[\"http\",\"tls\"],\"routeOnly\":false}}],\"outbounds\":[{\"tag\":\"proxy\",\"protocol\":\"vless\",\"settings\":{\"vnext\":[{\"address\":\"snapp.ir\",\"port\":80,\"users\":[{\"id\":\"00669e97-27fb-4273-878b-d514f7f4fd4b\",\"level\":8,\"encryption\":\"none\"}]}]},\"streamSettings\":{\"network\":\"ws\",\"wsSettings\":{\"path\":\"/\",\"headers\":{\"Host\":\"striker.starferi.ir\"}}},\"mux\":{\"enabled\":false,\"concurrency\":-1,\"xudpConcurrency\":8,\"xudpProxyUDP443\":\"\"}},{\"tag\":\"direct\",\"protocol\":\"freedom\",\"settings\":{\"domainStrategy\":\"UseIP\"},\"mux\":{\"enabled\":false,\"concurrency\":8,\"xudpConcurrency\":8,\"xudpProxyUDP443\":\"\"}},{\"tag\":\"block\",\"protocol\":\"blackhole\",\"settings\":{\"response\":{\"type\":\"http\"}},\"mux\":{\"enabled\":false,\"concurrency\":8,\"xudpConcurrency\":8,\"xudpProxyUDP443\":\"\"}}],\"dns\":{\"servers\":[\"1.1.1.1\"],\"hosts\":{\"domain:googleapis.cn\":\"googleapis.com\",\"dns.alidns.com\":[\"223.5.5.5\",\"223.6.6.6\",\"2400:3200::1\",\"2400:3200:baba::1\"],\"one.one.one.one\":[\"1.1.1.1\",\"1.0.0.1\",\"2606:4700:4700::1111\",\"2606:4700:4700::1001\"],\"dot.pub\":[\"1.12.12.12\",\"120.53.53.53\"],\"dns.google\":[\"8.8.8.8\",\"8.8.4.4\",\"2001:4860:4860::8888\",\"2001:4860:4860::8844\"],\"dns.quad9.net\":[\"9.9.9.9\",\"149.112.112.112\",\"2620:fe::fe\",\"2620:fe::9\"],\"common.dot.dns.yandex.net\":[\"77.88.8.8\",\"77.88.8.1\",\"2a02:6b8::feed:0ff\",\"2a02:6b8:0:1::feed:0ff\"]}},\"routing\":{\"domainStrategy\":\"IPIfNonMatch\",\"rules\":[{\"type\":\"field\",\"ip\":[\"1.1.1.1\"],\"outboundTag\":\"proxy\",\"port\":\"53\"},{\"type\":\"field\",\"ip\":[\"223.5.5.5\"],\"outboundTag\":\"direct\",\"port\":\"53\"}]}}\nلینک آموزش کلیک کن\n🦋\nChannel :\n@vipV2rayNGnp",
+        "date": "2026-05-10T15:10:07+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17298_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17298"
+      },
+      {
+        "id": 17297,
+        "text": "🤍\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n✔\n@VIPV2rayNGNP",
+        "date": "2026-05-10T14:59:52+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17297_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17297"
+      },
+      {
+        "id": 17296,
+        "text": "🤍\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n✔\n@VIPV2rayNGNP",
+        "date": "2026-05-10T14:59:47+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "vipV2rayNGnp_17296_0_4302825a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/vipV2rayNGnp/17296"
+      },
       {
         "id": 17295,
         "text": "🏳\nV2rayng + Psiphon\n📱\nvless://58715b6d-83c2-4695-b536-e5de12913eb6@t1.arshiaspeed.shop:2086?path=%2F&security=none&encryption=none&type=ws#@vipV2rayNGnp\nلینک آموزش کلیک کن\n🦋\nChannel :\n@vipV2rayNGnp",
@@ -4742,62 +4823,6 @@
         ],
         "links": [],
         "has_media": true
-      },
-      {
-        "id": 17180,
-        "text": "⚡️\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n👑\n@VIPV2rayNGNP",
-        "date": "2026-05-08T14:34:37+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "vipV2rayNGnp_17180_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/tug35JIg4a-kTMLPNWJJcoP_D9hScrdj75wt5D-iQ3tbNrcaD6swqqNBPLt6k0LBNH_ngZ_GKtdhXBE5n8zwVbVssXapIFs1SB15i5tiTx6kylhU6h7wi4CopU5-D0sO5Ed2z_2kpCns7yccE_GCHrcbURcmQjikZLqPSidR0qpXHXc8g5qnUkuVvwpkbX0L5qbkkb7uJqr5Fp2m_j1jeQPaCvDfDTDV0rFBkEWtZW9CzWci6HuDG7TmLubYs7A1ixb7GRnwooZpI3R7wJIQgFt23OTKc7TmY0HbFDPWnENL-zfNOQp3XgyNg0zz_CIOZS2ci7xeIViJ5CSlUPsP6Q.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 17179,
-        "text": "🏳\nV2rayng + Psiphon\n📱\nsocks://Og@130.185.75.82:9595#1vipV2rayNGnp\nvless://054be705-6bbf-42cd-9970-acfc325a34ca@SNApp.ir:80?path=%2FHoseisecu&security=&encryption=none&host=MMW.abanservers.ir&type=ws#2vipV2rayNGnp\nsocks://Og%3D%3D@62.220.126.56:30170#3vipV2rayNGnp\nsocks://Og%3D%3D@79.175.177.96:1080#4vipV2rayNGnp\nلینک آموزش کلیک کن\n🦋\nChannel :\n@vipV2rayNGnp",
-        "date": "2026-05-08T14:32:33+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "vipV2rayNGnp_17179_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/tug35JIg4a-kTMLPNWJJcoP_D9hScrdj75wt5D-iQ3tbNrcaD6swqqNBPLt6k0LBNH_ngZ_GKtdhXBE5n8zwVbVssXapIFs1SB15i5tiTx6kylhU6h7wi4CopU5-D0sO5Ed2z_2kpCns7yccE_GCHrcbURcmQjikZLqPSidR0qpXHXc8g5qnUkuVvwpkbX0L5qbkkb7uJqr5Fp2m_j1jeQPaCvDfDTDV0rFBkEWtZW9CzWci6HuDG7TmLubYs7A1ixb7GRnwooZpI3R7wJIQgFt23OTKc7TmY0HbFDPWnENL-zfNOQp3XgyNg0zz_CIOZS2ci7xeIViJ5CSlUPsP6Q.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 17178,
-        "text": "🏳\nV2rayng + Psiphon\n📱\nvless://ae7d645a-c03a-4d21-8047-2f77f315a6b7@snapp.ir:8880?path=%2Felctro&security=none&encryption=none&host=clud.extra-tm.ir&type=ws#vipV2rayNGnp\nلینک آموزش کلیک کن\n🦋\nChannel :\n@vipV2rayNGnp",
-        "date": "2026-05-08T14:20:35+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "vipV2rayNGnp_17178_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/tug35JIg4a-kTMLPNWJJcoP_D9hScrdj75wt5D-iQ3tbNrcaD6swqqNBPLt6k0LBNH_ngZ_GKtdhXBE5n8zwVbVssXapIFs1SB15i5tiTx6kylhU6h7wi4CopU5-D0sO5Ed2z_2kpCns7yccE_GCHrcbURcmQjikZLqPSidR0qpXHXc8g5qnUkuVvwpkbX0L5qbkkb7uJqr5Fp2m_j1jeQPaCvDfDTDV0rFBkEWtZW9CzWci6HuDG7TmLubYs7A1ixb7GRnwooZpI3R7wJIQgFt23OTKc7TmY0HbFDPWnENL-zfNOQp3XgyNg0zz_CIOZS2ci7xeIViJ5CSlUPsP6Q.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
-      },
-      {
-        "id": 17177,
-        "text": "⚡️\nNapsternetV Config\n🔒\nPassword :\n@VIPV2rayNGNP\n👑\n@VIPV2rayNGNP",
-        "date": "2026-05-08T14:19:51+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "vipV2rayNGnp_17177_0.jpg",
-            "url": "https://cdn4.telesco.pe/file/tug35JIg4a-kTMLPNWJJcoP_D9hScrdj75wt5D-iQ3tbNrcaD6swqqNBPLt6k0LBNH_ngZ_GKtdhXBE5n8zwVbVssXapIFs1SB15i5tiTx6kylhU6h7wi4CopU5-D0sO5Ed2z_2kpCns7yccE_GCHrcbURcmQjikZLqPSidR0qpXHXc8g5qnUkuVvwpkbX0L5qbkkb7uJqr5Fp2m_j1jeQPaCvDfDTDV0rFBkEWtZW9CzWci6HuDG7TmLubYs7A1ixb7GRnwooZpI3R7wJIQgFt23OTKc7TmY0HbFDPWnENL-zfNOQp3XgyNg0zz_CIOZS2ci7xeIViJ5CSlUPsP6Q.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true
       }
     ],
     "Vippackager": [
@@ -5447,6 +5472,21 @@
     ],
     "BestIELTS": [
       {
+        "id": 12603,
+        "text": "Tip: Misuse of quantifiers\n📏\n✅\nA number of students have applied for the program.\n📝\nتفاوت “a number of” (جمع) با “the number of” (مفرد) مهمه.\n❌\nThe number of students have applied. (غلط)",
+        "date": "2026-05-10T14:30:00+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "BestIELTS_12603_0_99028c67.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/BestIELTS/12603"
+      },
+      {
         "id": 12602,
         "text": "🆕\nفرصت ویژه برای مقطع کارشناسی و کارشناسی ارشد\n🔘\nاگر برای تحصیل در فنلاند تحقیقاتت رو انجام دادی و تصمیم جدی برای ساختن آینده‌ات در یکی از بهترین کشورهای اروپا گرفتی، الان بهترین زمان برای شروع پروسه اقدام\nه\n☑️\nپذیرش دانشگاه\n☑️\nراهنمایی و مشاوره تخصصی\n☑️\nبررسی شرایط و مدارک\n☑️\nمسیر اقامت دانشجویی فنلاند\n🟢\nبرای دریافت اطلاعات کامل و بررسی شرایطت، عدد «22» رو به آیدی زیر در تلگرام ارسال کن\n⬇️\n🚀\nt.me/ApplyFinlandStudy\n🚀\nt.me/ApplyFinlandStudy\n🔘\nشروع زودتر = شانس بیشتر برای آماده‌سازی، دریافت پذیرش و اقدام اصولی‌تر برای ویزا",
         "date": "2026-05-10T07:46:47+00:00",
@@ -5840,6 +5880,67 @@
       }
     ],
     "Broz_time": [
+      {
+        "id": 1957,
+        "text": "✅\nاپلیکیشن اندروید سایت جهانی دربی بت\n💰\nاولین سایت جهانی با امکان شارژ و برداشت ریالی(کارت به کارت)\n🔗\nبرای ورود فیلترشکن روی کشور مناسب قرار دهید مانند فنلاند و المان و....\n😀\nTelegram Channel\n👇\nhttps://t.me/+kpFvLD9kaeJhYTI0",
+        "date": "2026-05-10T14:47:17+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Broz_time_1957_0_e6058e0a.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/+kpFvLD9kaeJhYTI0",
+            "type": "telegram",
+            "display_text": "https://t.me/+kpFvLD9kaeJhYTI0"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/Broz_time/1957"
+      },
+      {
+        "id": 1956,
+        "text": "😤\nدنبال یه سایت شرط بندی بین المللی بودی که به ایرانیا خدمات بده؟!\n⛔\n👍\nدربی بت همون انتخاب  100%\n💎\nویژگی های سایت جهانی Derby Bet:\n⬅️\nامکان شارژ امن با کارت بانکی\n⬅️\nواریز اول دوبل شارژ می شوید(بونوس۱۰۰٪)\n⬅️\nپر اپشن ترین سایت فعال در ایران\n⬅️\nتسویه حساب کمتر از 5 دقیقه\n⬅️\nبرگشت بخشی از باخت به صورت هفتگی\n🚨\nکد هدیه ثبت نام:\nGG007\n⚠️\nبرای دانلود اپلکیشن کلیک کنید\n👉\n🔔\nکانال دربی بت :g20\n🅰\n🪙\nhttps://t.me/+kpFvLD9kaeJhYTI0",
+        "date": "2026-05-10T14:47:17+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Broz_time_1956_0_e6058e0a.jpg"
+          },
+          {
+            "type": "image",
+            "file": "Broz_time_1956_1_5f1a2765.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/+kpFvLD9kaeJhYTI0",
+            "type": "telegram",
+            "display_text": "https://t.me/+kpFvLD9kaeJhYTI0"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/Broz_time/1956"
+      },
+      {
+        "id": 1955,
+        "text": "🇮🇷\nکانفیگ اسلیپ‌نت برای اینترنت ملی\nslipnet-enc://AXBx56HM0mCGJr5isUMEqeWil4NEjA0rilrp3msA5yTO3o3uRZ70Htqd4cPM8nLCb5oT+D+gD4NdBqHxu8NuTk93T+wHmKG2mDgXvNH67wk6dFk2oadgMCZVI4QuK1RTaneXyVUVDRxeBTFXYm/fepX1C3xVgieh6+1xe9cCT+xs9mqsEa/iw2kjXb8PbGtKIRBiZz7cD9gk3H195UE1O0VyayQA88ux0VloevXZp8M2LaxgNunfcuXpR5k08T629Z4lqWNlwyliiSqF5gDtiO+pNz8NlBqMtSdXqvQxlYY65pcTy6pDYJR/BednEwiG6PakOlUwZ15oOgj4yDNeZU+cpTmJrlBrINpVtLSuqwvhOiZznDhIHmzQ9bcLDdRgHKlWInqd3Isq5n52xlWeiEXFj0XGBgWv54QnTMvrqwXxRC61h1RuUjYJ5aXk1SF8ZI4CugfTY3Ia1oSXYdt5/qHgQflGXya3VCTDYqSie1IHXNeaQCRaJ9i8FqRZxgT4/xSFbPvurWhzHzhpYUiQ1eIefqE1nRDxYi7f46mMel2h9weDXutbYirDjyRJgWZqz+P3Yq3YXEju1mKMi+drfVTPaYjJAOCqdGzPBNZTgyZia8bublH2kk+y6+SjRxkN3S41Qd9BZfMeEoXxNHJJKRQoyXz9d87aXea7suAO0YqeYHREnelxBUbLGkQeTJWTxDuk9ku6WvsmawjjpqhC7l4akmA1LYCMc6CW7oq7ezznnOP8jS6G\n📲\nدانلود و آموزش استفاده(کلیک کن)\n👉\n🕛\n«\n@Broz_time",
+        "date": "2026-05-10T14:25:29+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Broz_time_1955_0_e6058e0a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/Broz_time/1955"
+      },
       {
         "id": 1954,
         "text": "🇮🇷\nکانفیگ ترکیب ویتوری+سایفون برای تمومی اپراتور ها نامحدود مولتی لوکیشن (ممکنه یسری مناطق کار بکنه و یسری مناطق دیگ کار نکنه)\n⭐️\nvless://ce5ccdd9-a6f8-488f-aaa1-e5d66b9f9133@185.143.233.235:80?security=none&allowInsecure=0&encryption=none&type=ws&host=d.nsa03.com&path=/#@vasl_bashim\n⚡️\nفیلترینگ شدید و نت ملی رو باهاش دور بزن !\n🕛\n«\n@Broz_time",
@@ -6606,6 +6707,309 @@
       }
     ],
     "IranintlTV": [
+      {
+        "id": 336492,
+        "text": "ویدیوی رسیده به ایران‌اینترنشنال حاکی است گروهی از ایرانیان ساکن بریتانیا یکشنبه ۲۰ اردیبهشت در پی فراخوان شاهزاده رضا پهلوی در لندن تجمع کردند.",
+        "date": "2026-05-10T15:26:29+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336492_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336492_1_69482c8d.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336492"
+      },
+      {
+        "id": 336491,
+        "text": "معترضان ایرانی در بانکوک، پایتخت تایلند، هم‌صدا با کارزار جهانی «یک ملت در گروگان»، خواستار توجه جامعه بین‌المللی به وضعیت بحرانی داخل ایران شدند.\n@iranintltv",
+        "date": "2026-05-10T15:24:38+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336491_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336491_1_14195b11.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336491"
+      },
+      {
+        "id": 336490,
+        "text": "بیل راثبورن، مقام پیشین امنیت المپیک، درباره احتمال برنامه‌ریزی شبکه‌های مخفی جمهوری اسلامی و گروه‌های نیابتی برای انجام اقدامات تروریستی در جریان جام جهانی فوتبال در آمریکا هشدار داد.\nگفت‌وگو با رها پوربخش، عضو تحریریه ایران‌اینترنشنال\n@iranintltv",
+        "date": "2026-05-10T15:22:27+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336490_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336490_1_3175b83b.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336490"
+      },
+      {
+        "id": 336489,
+        "text": "ویدیوهای رسیده به ایران‌اینترنشنال نشان می‌دهند گروهی از ایرانیان ساکن جمهوری ایرلند، یکشنبه ۲۰ اردیبهشت در اعتراض به اعدام‌های جمهوری اسلامی، در شهر دوبلین تجمع کردند.",
+        "date": "2026-05-10T15:18:07+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336489_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336489_1_e076ac92.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336489"
+      },
+      {
+        "id": 336488,
+        "text": "ویدیوهای رسیده به ایران اینترنشنال نشان می‌دهد شمار زیادی از ایرانیان مقیم هامبورگ روز یکشنبه ۲۰ اردیبهشت‌ماه در پی فراخوان شاهزاده رضا پهلوی، در اعتراض به اعدام‌های جمهوری اسلامی و قطع اینترنت در ایران راهپیمایی کردند.",
+        "date": "2026-05-10T15:15:53+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336488_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336488_1_8f36a6b2.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336488"
+      },
+      {
+        "id": 336487,
+        "text": "بر اساس ویدیوهای رسیده به ایران‌اینترنشنال، ایرانیان مقیم سوئیس یکشنبه ۲۰ اردیبهشت در پی فراخوان شاهزاده رضا پهلوی، علیه اعدام‌های جمهوری اسلامی و قطع اینترنت در ایران، در شهر ژنو تجمع کردند.",
+        "date": "2026-05-10T15:08:43+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336487_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336487_1_b0230545.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336487"
+      },
+      {
+        "id": 336486,
+        "text": "ویدیوهای رسیده به ایران‌اینترنشنال نشان می‌دهند گروهی از ایرانیان مقیم ایتالیا، یکشنبه ۲۰ اردیبهشت در اعتراض به اعدام‌های جمهوری اسلامی، در شهر بولونیا تجمع کردند و شعار «تا آخوند کفن نشود، این وطن وطن نشود» سردادند.",
+        "date": "2026-05-10T14:57:10+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336486_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336486_1_f188a800.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336486"
+      },
+      {
+        "id": 336485,
+        "text": "خبرگزاری دولتی ایرنا گزارش داد پاسخ جمهوری اسلامی به آخرین متن پیشنهادی آمریکا برای خاتمه جنگ، به میانجی پاکستانی تحویل داده شده است.\nگفت‌وگو با علی شیرازی، عضو تحریریه ایران‌اینترنشنال\n@iranintltv",
+        "date": "2026-05-10T14:54:15+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336485_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336485_1_af782722.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336485"
+      },
+      {
+        "id": 336484,
+        "text": "رسانه‌های ایران گزارش دادند در پاسخ جمهوری اسلامی درباره توافق خاتمه جنگ به میانجی پاکستانی، بر پایان جنگ در همه جبهه‌ها، به‌ویژه لبنان، و تامین امنیت کشتیرانی تاکید شده است.\nپیش‌تر دونالد ترامپ گفته بود انتظار دارد هر چه سریع‌تر پاسخ جمهوری اسلامی را دریافت کند.\nhttps://iranintl.com/202605106999",
+        "date": "2026-05-10T14:53:54+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336484_0_22bd9afc.jpg"
+          },
+          {
+            "type": "image",
+            "file": "IranintlTV_336484_1_b3804d76.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://iranintl.com/202605106999",
+            "type": "external",
+            "display_text": "https://iranintl.com/202605106999"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/IranintlTV/336484"
+      },
+      {
+        "id": 336483,
+        "text": "ویدیوهای رسیده به ایران‌اینترنشنال نشان می‌دهد ایرانیان مقیم هامبورگ در آلمان روز یکشنبه ۲۰ اردیبهشت‌ماه در پی فراخوان شاهزاده رضا پهلوی، در اعتراض به اعدام‌های جمهوری اسلامی و قطع اینترنت در ایران راهپیمایی کردند.",
+        "date": "2026-05-10T14:48:46+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336483_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336483_1_713fef1e.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336483"
+      },
+      {
+        "id": 336482,
+        "text": "بر اساس ویدیوهای رسیده به ایران‌اینترنشنال، گروهی از  ایرانیان مقیم بریتانیا، یکشنبه ۲۰ اردیبهشت در اعتراض به اعدام‌های جمهوری اسلامی، در شهرهای نیوکسل و بیرمنگام تجمع کردند و شعار دادند: «ایران آری، آخوند نه»",
+        "date": "2026-05-10T14:46:31+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336482_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336482_1_d062c090.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336482"
+      },
+      {
+        "id": 336481,
+        "text": "یکی از شرکت‌کنندگان در تجمع لندن در گفت‌وگو با آیدین مقیمی، خبرنگار ایران‌اینترنشنال، گفت: «تا وقتی که اینترنت مردم ایران قطع باشد، صدای ایرانیان داخل کشور در سراسر جهان هستیم.»\n@iranintltv",
+        "date": "2026-05-10T14:40:22+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336481_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336481_1_1a0b622f.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336481"
+      },
+      {
+        "id": 336480,
+        "text": "سرخط خبرهای یکشنبه ۲۰ اردیبهشت\n@iranintltv",
+        "date": "2026-05-10T14:35:19+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336480_0_22bd9afc.jpg"
+          },
+          {
+            "type": "video",
+            "file": "IranintlTV_336480_1_962d6acd.mp4"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/IranintlTV/336480"
+      },
+      {
+        "id": 336479,
+        "text": "مایک والتز، نماینده آمریکا در سازمان ملل متحد، به فاکس نیوز گفت: عملیات خشم اقتصادی در حال حاضر اقتصاد ایران را ویران می‌کند. پول آنها در حال سقوط آزاد است، ذخایر ارزی آنها نزدیک به صفر است.\nhttps://iranintl.com/202605109384",
+        "date": "2026-05-10T14:33:46+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336479_0_22bd9afc.jpg"
+          },
+          {
+            "type": "image",
+            "file": "IranintlTV_336479_1_0e01e8ce.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://iranintl.com/202605109384",
+            "type": "external",
+            "display_text": "https://iranintl.com/202605109384"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/IranintlTV/336479"
+      },
+      {
+        "id": 336476,
+        "text": "دونالد ترامپ در گفت‌وگو با «فول مژر» درباره اورانیوم غنی‌شده در ایران گفت: ما بالاخره به آن دست پیدا می‌کنیم، ما آنجا را تحت نظارت داریم. همه‌چیز تحت نظر است. اگر کسی به آن محل نزدیک شود، خبردار می‌شویم و نابودش می‌کنیم.\nhttps://iranintl.com/202605102225",
+        "date": "2026-05-10T14:27:12+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "IranintlTV_336476_0_22bd9afc.jpg"
+          },
+          {
+            "type": "image",
+            "file": "IranintlTV_336476_1_9328c884.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://iranintl.com/202605102225",
+            "type": "external",
+            "display_text": "https://iranintl.com/202605102225"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/IranintlTV/336476"
+      },
       {
         "id": 336475,
         "text": "معصومه طاهرخانی، تحلیل‌گر اقتصادی، گفت ایرانیان در حال حاضر درگیر «اقتصاد بقا» هستند. او افزود: «وقتی سفره مردم کوچک‌تر، ارزان‌تر و بی‌کیفیت‌تر می‌شود، نسلی شکل می‌گیرد که با مشکلات سلامت روبه‌رو خواهد بود و این موضوع تهدیدی جدی برای آینده ایران به شمار می‌رود.»\n@iranintltv",
@@ -8292,341 +8696,6 @@
         "has_media": true,
         "has_links": true,
         "source": "https://t.me/IranintlTV/336388"
-      },
-      {
-        "id": 336386,
-        "text": "ویدیوهای دریافتی نشان می‌دهد جمعی از ایرانیان آلمان در حمایت از مردم ایران و در اعتراض به قطعی اینترنت در ایران، روز شنبه ۱۹ اردیبهشت تجمعی در هامبورگ برگزار کردند. آن‌ها با سر دادن شعار «این همه سال جنایت، مرگ بر این ولایت» علیه اقدامات سرکوبگرانه جمهوری اسلامی واکنش نشان دادند.\n@iranintltv",
-        "date": "2026-05-10T04:10:48+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336386_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336386_1_da0b38f0.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336386"
-      },
-      {
-        "id": 336385,
-        "text": "وای نت در تحلیلی به نوشته سور پلاکر، سردبیر ارشد اقتصادی این روزنامه، با مقایسه وضعیت کنونی جمهوری اسلامی با روزهای آخر آلمان نازی، هشدار داد ترامپ برای رفع تهدید جمهوری اسلامی نباید منتظر تغییر منطقی رویکرد تهران و یا خیزش مردم علیه حکومت بماند.\nاین مطلب نوشت: «در هفته‌های اخیر، ترامپ توافق‌هایی معقول به حکومت ایران پیشنهاد کرده است تا به جنگ پایان دهد. تندروها در میان رهبران حکومت، با وجود ضربه‌هایی که ایرانیان متحمل شده‌اند و در جنگ با ایالات متحده و اسرائیل همچنان متحمل خواهند شد، این پیشنهادها را با تمسخر رد کرده‌اند.»\nوای‌نت هشدار داد: «اگر ترامپ تصمیم بگیرد با شکیبایی منتظر بماند تا آنان از تعصب و افراط‌گرایی خود دست بکشند، ممکن است دریابد که صبرش بی‌نتیجه بوده است. این همان درس سختی است که تاریخ اروپا ۸۱ سال پیش لازم داشت.»\nاین تحلیل با اشاره به اینکه آلمانی‌ها با وجودی که ایمانشان را به هیتلر و حکومت نازی‌ها از دست داده بودند، شورش نکردند و خودشان نازیسم را سرنگون نکردند، گفت حکومت نازی تا زمانی که سربازان متفقین با زور بر درهای مقرهایشان کوبیدند، به سیاست‌های تهدیدآمیز و سرکوب‌گرانه خود ادامه داد.",
-        "date": "2026-05-10T03:53:56+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336385_0_d09b374b.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336385_1_e54fa58f.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336385"
-      },
-      {
-        "id": 336384,
-        "text": "مصطفی پوردهقان، نماینده مجلس، در گفت‌وگویی با «اقتصاد۱۲۰» درباره وضعیت اقتصادی ایران، ضمن اشاره به مشاهده آثار رهاسازی نرخ ارز از سال گذشته در فروردین و اردیبهشت ۱۴۰۵، افزود: «اگر کسی امروز بگوید شرایط معیشتی، شرایط نرخ تورم و شرایط ارز به‌خاطر جنگ است، یک دروغگوی محض است.»",
-        "date": "2026-05-10T03:20:53+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336384_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336384_1_ef7470cf.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336384"
-      },
-      {
-        "id": 336383,
-        "text": "رندی فاین، عضو جمهوری‌خواه مجلس نمایندگان آمریکا، در پستی در ایکس با تاکید بر حمایت خود از سیاست‌های ترامپ علیه جمهوری اسلامی، گفت: «ما راهبرد صلح از طریق قدرت را برای درهم شکستن حکومت ایران انتخاب کرده‌ایم.»\nاو گفت: «۴۷ سال تلاش کردیم از راه به اصطلاح مودبانه، یعنی دیپلماسی بی‌پایان، پیش برویم؛ در حالی که ایران شعار مرگ بر آمریکا سر می‌داد و جان شمار زیادی از آمریکایی‌ها را گرفت. همکاران دموکرات من از تک‌تک لحظات آن لذت برده‌اند. دیگر بس است.»\nhttps://iranintl.com/202605101678",
-        "date": "2026-05-10T02:35:36+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336383_0_d09b374b.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336383_1_2d4c636f.jpg"
-          }
-        ],
-        "links": [
-          {
-            "url": "https://iranintl.com/202605101678",
-            "type": "external",
-            "display_text": "https://iranintl.com/202605101678"
-          }
-        ],
-        "has_media": true,
-        "has_links": true,
-        "source": "https://t.me/IranintlTV/336383"
-      },
-      {
-        "id": 336382,
-        "text": "ویدیوهای دریافت‌شده نشان می‌دهد ایرانیان مقیم آلمان، روز شنبه ۱۹ اردیبهشت، در حمایت از انقلاب ملی و در اعتراض به اجرای احکام اعدام، سرکوب و قطع اینترنت از سوی جمهوری اسلامی، در اشتوتگارت علیه حکومت تجمع کردند و حمایت خود را از مردم ایران اعلام کردند.",
-        "date": "2026-05-10T02:20:56+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336382_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336382_1_5fdd5f19.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336382"
-      },
-      {
-        "id": 336381,
-        "text": "ویدیوی دریافت‌شده، پرفورمنس اعتراضی جمعی از ایرانیان را در روز شنبه ۱۹ اردیبهشت در بوردوی فرانسه نشان می‌دهد که در آن تلاش شده است سرکوب و کشتار معترضان از سوی جمهوری اسلامی در ۱۸ و ۱۹ دی‌ماه ۱۴۰۴، به تصویر کشیده شود.",
-        "date": "2026-05-10T02:19:51+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336381_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336381_1_aabab236.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336381"
-      },
-      {
-        "id": 336380,
-        "text": "مارکو روبیو، وزیر خارجه آمریکا، در پستی در ایکس با اشاره به دیدارش با نخست‌وزیر و وزیر خارجه قطر گفت در این دیدار درباره حمایت آمریکا از توان دفاعی قطر گفت‌وگو کرده است. او افزود: «شراکت ما برای بازدارندگی در برابر تهدیدها و تقویت ثبات در خاورمیانه اهمیت دارد.»\nhttps://iranintl.com/202605108121",
-        "date": "2026-05-10T01:25:45+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336380_0_d09b374b.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336380_1_aedbd7b6.jpg"
-          }
-        ],
-        "links": [
-          {
-            "url": "https://iranintl.com/202605108121",
-            "type": "external",
-            "display_text": "https://iranintl.com/202605108121"
-          }
-        ],
-        "has_media": true,
-        "has_links": true,
-        "source": "https://t.me/IranintlTV/336380"
-      },
-      {
-        "id": 336379,
-        "text": "در پی شیوع هانتاویروس در یک کشتی تفریحی، تاکنون سه نفر جان باخته‌اند. سازمان بهداشت جهانی اعلام کرد تا ۱۸ اردیبهشت، شش مورد قطعی و دو مورد محتمل ابتلا شناسایی شده و کشورهای مختلف در حال ردیابی مسافران و تماس‌های نزدیک آن‌ها هستند.\nتدروس ادهانوم، دبیرکل سازمان بهداشت جهانی، در این‌باره گفت: «این ویروس، ویروس کووید نیست.»",
-        "date": "2026-05-10T00:25:33+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336379_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336379_1_bad3d9b5.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336379"
-      },
-      {
-        "id": 336370,
-        "text": "در میان هزاران نام، هر کدامشان یک زندگی کامل بودند؛ نه تیتر، نه عدد، نه آمار.\nیکی سوت مسابقه در دست داشت،\nیکی دانشجوی مکانیک بود،\nیکی خرج خانه را می‌داد،\nیکی از شیفت پتروشیمی آمده بود،\nو یکی هنوز سربازی‌اش تمام نشده بود.\nصهبا رشتیان، عرفان عبدی‌پور، مهدی دلخوش، میکائیل دادرس صابری، مجتبی گرمابی، آرمین جشنی‌نژاد، رضا رحمتی و یاسین ضربی‌پور گلستانی\nجاویدنامان انقلاب ملی ایرانیان؛\nنسلی که حتی با گلوله هم متوقف نشد و از حافظه این سرزمین پاک نمی‌شود.\n#جاویدنامان_انقلاب_ملی_ایرانیان",
-        "date": "2026-05-10T00:00:30+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_0_d09b374b.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_1_840ec770.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_2_c1d28f19.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_3_50d73bf1.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_4_9888a28f.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_5_d9b00455.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_6_2633dd4f.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_7_4eeb0669.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_8_30e29e51.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336370_9_978f1c00.jpg"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336370"
-      },
-      {
-        "id": 336369,
-        "text": "کانال ۱۴ اسرائیل گزارش داد عربستان سعودی هشدار داده بود در صورت ادامه «پروژه آزادی» تنگه هرمز از سوی ترامپ، ریاض اجازه استفاده از حریم هوایی و پایگاه‌های خود را به آمریکا نخواهد داد، زیرا نگران تشدید تنش‌های منطقه‌ای بود. ترامپ، ۳۶ ساعت پس از آغاز این ماموریت، آن را متوقف کرد.\nhttps://iranintl.com/202605096407",
-        "date": "2026-05-09T23:29:05+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336369_0_d09b374b.jpg"
-          },
-          {
-            "type": "image",
-            "file": "IranintlTV_336369_1_7b0e0253.jpg"
-          }
-        ],
-        "links": [
-          {
-            "url": "https://iranintl.com/202605096407",
-            "type": "external",
-            "display_text": "https://iranintl.com/202605096407"
-          }
-        ],
-        "has_media": true,
-        "has_links": true,
-        "source": "https://t.me/IranintlTV/336369"
-      },
-      {
-        "id": 336368,
-        "text": "مراد ویسی، تحلیل‌گر ارشد ایران‌اینترنشنال، گفت: «نیویورک‌پست درباره حمله احتمالی هسته‌های خفته جمهوری اسلامی به جام جهانی فوتبال هشدار داد. جام جهانی قرار است به طور مشترک در امریکا ؛ مکزیک و کانادا برگزار شود.»\n@iranintltv",
-        "date": "2026-05-09T23:23:05+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336368_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336368_1_3acd5457.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336368"
-      },
-      {
-        "id": 336367,
-        "text": "مراد ویسی، تحلیل‌گر ارشد ایران‌اینترنشنال، گفت: «با فراخوان شاهزاده رضا پهلوی، قرار است  روز یکشنبه تجمع «یک ملت در گروگان» در شهرهای مختلف جهان برگزار شود. تجمعی در اعتراض به قطع ۱۱ هفته ای  اینترنت در ایران، ادامه بازداشت‌های گسترده و افزاش اعدام ها در ایران.»\n@iranintltv",
-        "date": "2026-05-09T23:17:35+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336367_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336367_1_df8536ec.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336367"
-      },
-      {
-        "id": 336366,
-        "text": "نیویورک تایمز گزارش داد روسیه برای تقویت توان جمهوری اسلامی در برابر حملات آمریکا، کالاهای نظامی و تجاری از طریق دریای خزر به ایران ارسال می‌کند.\nبر اساس این گزارش، محصور بودن دریای خزر رصد تبادلات دریایی میان دو کشور را دشوار کرده است.\nگفت‌وگو با عطا حسینیان، روزنامه‌نگار\n@iranintltv",
-        "date": "2026-05-09T22:17:48+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336366_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336366_1_bbb08c99.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336366"
-      },
-      {
-        "id": 336365,
-        "text": "با گذشت بیش از دو ماه از قطع اینترنت، جمهوری اسلامی از تاریکی دیجیتال برای کاهش هزینه سرکوب و افزایش میزان خشونت استفاده می‌کند.\nهمزمان در دانشگاه‌ها نیز معترضان علاوه بر بازداشت، با محرومیت از تحصیل، اخراج و امنیتی شدن فضا روبه‌رو هستند.\nگفت‌وگو با رقیه رضایی، روزنامه‌نگار\n@iranintltv",
-        "date": "2026-05-09T22:17:20+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336365_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336365_1_95cb792f.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336365"
-      },
-      {
-        "id": 336364,
-        "text": "این روزها یک سوال مهم در میان ایرانیان مطرح است: اگر دوباره قیام کردیم و جمهوری اسلامی بار دیگر به کشتار دست زد، چه باید کرد؟ این سوال بسیار تکان‌دهنده است، اما در عین حال دغدغه‌ی بسیاری از ایرانی‌هاست. به نظر می‌رسد با توجه به نشانه‌های کنونی انباشت خشم در جامعه و حرکت به سوی شرایط پیش از قیام، پیدا کردن پاسخ درست برای این سوال یکی از مهم‌ترین دغدغه‌های امروز مردم ایران است.\n@iranintltv",
-        "date": "2026-05-09T22:14:54+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "IranintlTV_336364_0_d09b374b.jpg"
-          },
-          {
-            "type": "video",
-            "file": "IranintlTV_336364_1_58f15aa3.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/IranintlTV/336364"
       }
     ],
     "tavaanatech": [
@@ -10067,6 +10136,59 @@
     ],
     "echo_center": [
       {
+        "id": 6114,
+        "text": "🟢\nکانفیگ اسلیپ‌نت\nslipnet-enc://AQZjbrZJnnlhJ54bsTr0D/dy24tJo9brj2isA8VRtIa74Z94u+BkG5gOp9nMTOoEcf9UgRSuFD3VWkmzKMrxf22D80UC36klbZLJR+lDL/5TgdWiqUeYRnprCbiz88c3eoIE52zprnsEC7gj6lPRJbQ5+ra1EeQdRn6BFFXUJ8yuwBzZcC7EBU3VQ+4fOMbeLS6e7twN2PaMoLzDGDMS9TahJbs3xj1rRSlWLRF6HHpX1IDPq6VVhttIFjvrIIJiaDiCU+fAHpu76HdBp1vQQx7uGDA9ZMOknDWNi29+/TU4mF4RdlcdCdpAt0+OmjfYinD1SGwuE9x6C/duqrskMHR+W+BE/gIFTYU/44yj5RP4BHppWrQuMDYUqZVpNCi/0fRhH005cdkFdX2iw+dpgDDQeFUgpxA1L45ZFGu7bT1vmjhaFMM8xfNcQwZZpTFgd8FmMvkvWh3pUQJ3NpTAao8gND/veHZaM6J1lk6x3zV1BYQmnurg6xHmP/iIYFcMrwrPIzfJuOJWRTrVYJAVGMLC5auSrlTQdrCx0XCCojhzx5zmWtCugqq/5nFFE3i6+IjrU5wzI7ACd2IcMEnLw85OxH07sR+oZLw2sXDvfT6RwfeYVrWy+1/Db2XQae5bjl67eI84Rdo4nGdWtJisK2pOlMVCLCxlQ/8otgM0APBhVkMnbKubxhkszQMmTZMRWh9CKiig4xj0DUPdThRdKOi0eQPal7ATEgFUsRkX5n+z4wZv5HaY2tvugRI6pc6Hte8Z+eqWMpbqJIjfomGWb8nl0C4WUj3i0RcLn7E8QQ==\n@Echo_Center",
+        "date": "2026-05-10T15:11:12+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "echo_center_6114_0_cdb5655a.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/echo_center/6114"
+      },
+      {
+        "id": 6113,
+        "text": "ضیا جان، همین که خانم الهام شمس با احترام فرمودند +\nکص مادرت تخمِ آخوند\n@Echo_Center",
+        "date": "2026-05-10T15:08:13+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "echo_center_6113_0_cdb5655a.jpg"
+          },
+          {
+            "type": "image",
+            "file": "echo_center_6113_1_42e066c3.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/echo_center/6113"
+      },
+      {
+        "id": 6112,
+        "text": "ضیا جان، همین که خانم الهام شمس با احترام فرمودند +\nکص مادرت تخمِ آخوند\n@Echo_Center",
+        "date": "2026-05-10T14:56:39+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "echo_center_6112_0_cdb5655a.jpg"
+          },
+          {
+            "type": "image",
+            "file": "echo_center_6112_1_a208e177.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/echo_center/6112"
+      },
+      {
         "id": 6111,
         "text": "به مناسبت روز مادر\nتف تو ذات مادر آخوند\n@Echo_Center",
         "date": "2026-05-10T09:10:42+00:00",
@@ -10967,6 +11089,31 @@
       }
     ],
     "apkclub": [
+      {
+        "id": 70294,
+        "text": "⚜️\nمعرفی میرا (Mira) | دستیار هوش مصنوعی رایگان، جامع و همه زبانه در تلگرام\nامروز در APKCLUB به سراغ ابزاری می‌رویم که تعریف تازه‌ای از «دستیار هوشمند» در پیام‌رسان تلگرام ارائه می‌دهد؛ رباتی که بدون دریافت هیچ هزینه‌ای، مجموعه‌ای از قدرتمندترین امکانات هوش مصنوعی مولد را یکجا در اختیار شما قرار می‌دهد.\n🔹\nخدمات کلیدی ربات Mira:\n🧠\nچت هوشمند فارسی:\nمکالمهٔ روان و دقیق به زبان فارسی، همراه با قابلیت تحقیق، نگارش، ایده‌پردازی و پاسخ به پرسش‌های تخصصی.\n🎨\nتولید تصویر:\nخلق تصاویر هنری، مفهومی و گرافیکی تنها با یک توصیف متنی. ایده‌آل برای طراحان، تولیدکنندگان محتوا و علاقه‌مندان هنر دیجیتال.\n🎬\nتولید ویدئو:\nتبدیل متن به ویدئوهای کوتاه؛ راهکاری نوین برای ساخت محتوای آموزشی، خلاقانه و تبلیغاتی.\n🎵\nتولید موسیقی:\nساخت قطعهٔ موسیقی بر اساس ژانر، تم و حس‌وحال درخواستی. مناسب برای پروژه‌های صوتی، پادکست و محتوای رسانه‌ای.\n🛡️\nکنترل و مدیریت گروه:\nارائهٔ ابزارهای پیشرفتهٔ مدیریت گروه‌های تلگرامی شامل سیستم اخطار، مدیریت کاربران و گزارش‌گیری عملکرد.\n✅\nچرا Mira انتخابی هوشمندانه است؟\n· کاملاً رایگان، بدون اشتراک و محدودیت پنهان\n· پشتیبانی کامل از زبان فارسی\n· یکپارچه‌سازی چندین سرویس در یک ربات\n· قابلیت افزودن به گروه‌ها و سوپرگروه‌ها\nبرای مشاهده و استفاده از این ابزار کاربردی، از طریق آدرس زیر اقدام کنید:\n🤖\nhttps://t.me/mira?start=ref_8163935161\nاز همراهی شما سپاسگزاریم.\nتیم APKCLUB\n#MJEKING\n@APKCLUB",
+        "date": "2026-05-10T14:31:18+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "apkclub_70294_0_d32af756.jpg"
+          },
+          {
+            "type": "image",
+            "file": "apkclub_70294_1_fac5abd3.jpg"
+          }
+        ],
+        "links": [
+          {
+            "url": "https://t.me/mira?start=ref_8163935161",
+            "type": "telegram",
+            "display_text": "https://t.me/mira?start=ref_8163935161"
+          }
+        ],
+        "has_media": true,
+        "has_links": true,
+        "source": "https://t.me/apkclub/70294"
+      },
       {
         "id": 70293,
         "text": "🛍\nخرید اشتراک gemini pro تنها با 299 هزار تومان در پریم استور.\n☄️\nتو این روزا که Chatgpt business نیست و افرش تموم شد بهترین گزینه همینه\n❔\nچرا پریم استور؟\n🕖\nتحویل سریع (بین 1 تا 8 ساعت)\n🔒\nبدون نیاز به اطلاعات و لاگین حساب شما\nضمانت کامل 30 روز\nعلاوه بر جمنای، اشتراک سرویس‌های زیر هم برای خرید موجود است:\n(Claude • Chatgpt plus, go  • Grok • Perplexity • Cursor • Leonardo • Gemini ultra •.....)\n🛒\nشروع خرید از طریق ربات :\n🤖\n@prem_store_bot\n🌐\nوب سایت\n|\n💡\nکانال تلگرام\n|\n💬\nارتباط با پشتیبانی",
@@ -12045,22 +12192,22 @@
       }
     ]
   },
-  "last_update": "2026-05-10T14:20:46.849544+00:00",
+  "last_update": "2026-05-10T15:30:51.258150+00:00",
   "last_cleanup": "2026-05-09T12:42:52.832634",
   "statistics": {
-    "total_posts": 713,
-    "total_media": 879,
-    "total_files": 879,
-    "total_links": 144,
+    "total_posts": 721,
+    "total_media": 883,
+    "total_files": 883,
+    "total_links": 150,
     "files_by_type": {
-      "image": 811,
-      "video": 62,
+      "image": 813,
+      "video": 64,
       "file": 5,
       "document": 1
     },
-    "referenced_files": 879,
-    "existing_media_files": 878,
-    "total_size_mb": 312.56,
-    "last_calculation": "2026-05-10T14:20:46.860096+00:00"
+    "referenced_files": 883,
+    "existing_media_files": 882,
+    "total_size_mb": 338.66,
+    "last_calculation": "2026-05-10T15:30:51.268743+00:00"
   }
 }
