@@ -1684,6 +1684,21 @@
     ],
     "Configir98": [
       {
+        "id": 8633,
+        "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
+        "date": "2026-05-12T02:33:53+00:00",
+        "media": [
+          {
+            "type": "image",
+            "file": "Configir98_8633_0_cc65f84b.jpg"
+          }
+        ],
+        "links": [],
+        "has_media": true,
+        "has_links": false,
+        "source": "https://t.me/Configir98/8633"
+      },
+      {
         "id": 8632,
         "text": "🛜\n𝗡𝗽𝘃 𝗧𝘂𝗻𝗻𝗲𝗹 𝗡𝗮𝗽𝘀𝘁𝗲𝗿𝗻𝗲𝘁𝗩\n🛡️\nPassword:\n@Configir98\n✅\n@Configir98",
         "date": "2026-05-11T23:59:47+00:00",
@@ -3335,25 +3350,6 @@
         "has_media": true,
         "has_links": false,
         "source": "https://t.me/Configir98/8519"
-      },
-      {
-        "id": 8518,
-        "text": "🔴\nرئیس اتحادیه کسب‌وکارهای اینترنتی:   درآمد برخی فعالان شبکه‌های اجتماعی به نزدیک صفر رسیده است.",
-        "date": "2026-05-10T08:41:51+00:00",
-        "media": [
-          {
-            "type": "image",
-            "file": "Configir98_8518_0_cfd8e3d7.jpg"
-          },
-          {
-            "type": "video",
-            "file": "Configir98_8518_1_4cb049a9.mp4"
-          }
-        ],
-        "links": [],
-        "has_media": true,
-        "has_links": false,
-        "source": "https://t.me/Configir98/8518"
       }
     ],
     "vipV2rayNGnp": [
@@ -14008,23 +14004,23 @@
       }
     ]
   },
-  "last_update": "2026-05-12T02:09:42.289063+00:00",
+  "last_update": "2026-05-12T02:55:03.473678+00:00",
   "last_cleanup": "2026-05-09T12:42:52.832634",
   "statistics": {
     "total_posts": 811,
-    "total_media": 1005,
-    "total_files": 1005,
+    "total_media": 1004,
+    "total_files": 1004,
     "total_links": 195,
     "files_by_type": {
       "image": 944,
-      "video": 54,
       "file": 5,
+      "video": 53,
       "audio": 1,
       "document": 1
     },
-    "referenced_files": 1005,
-    "existing_media_files": 1004,
-    "total_size_mb": 232.67,
-    "last_calculation": "2026-05-12T02:09:42.301615+00:00"
+    "referenced_files": 1004,
+    "existing_media_files": 1003,
+    "total_size_mb": 232.61,
+    "last_calculation": "2026-05-12T02:55:03.486001+00:00"
   }
 }
